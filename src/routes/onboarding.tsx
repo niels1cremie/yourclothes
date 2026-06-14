@@ -670,7 +670,7 @@ function ResultCard({
   rows: [string, string][];
 }) {
   return (
-    <div className="editorial-card p-5">
+    <div className="editorial-card p-3">
       <span
         className="text-[10px]"
         style={{
@@ -681,11 +681,11 @@ function ResultCard({
       >
         {eyebrow}
       </span>
-      <dl className="mt-3 space-y-2">
+      <dl className="mt-2 space-y-1">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-baseline justify-between gap-3">
-            <dt className="text-xs text-muted-foreground">{k}</dt>
-            <dd className="text-right text-sm">{v}</dd>
+          <div key={k} className="flex items-baseline justify-between gap-2">
+            <dt className="text-[10px] text-muted-foreground">{k}</dt>
+            <dd className="text-right text-[12px]">{v}</dd>
           </div>
         ))}
       </dl>

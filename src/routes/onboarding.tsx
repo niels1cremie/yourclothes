@@ -709,22 +709,17 @@ function StepWardrobe({
   };
 
   return (
-    <div>
-      <SectionTitle
-        eyebrow="Your wardrobe"
-        title="Start with five favorite pieces."
-      />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Snap or upload items individually, or a flat-lay of several. The AI
-        will detect category, color, fabric and formality — you can correct
-        anything we get wrong.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Your wardrobe" title="Add five favorite pieces." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        AI detects category, color, fabric and formality. Correct anything later.
       </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-4 gap-2">
         {s.wardrobePhotos.map((url, i) => (
           <div
             key={i}
-            className="relative aspect-square overflow-hidden rounded-xl border border-border"
+            className="relative aspect-square overflow-hidden rounded-lg border border-border"
           >
             <img src={url} alt="" className="h-full w-full object-cover" />
             <button
@@ -735,28 +730,17 @@ function StepWardrobe({
                 )
               }
               aria-label="Remove"
-              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-background/90"
+              className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/90"
             >
-              <X className="h-3 w-3" />
+              <X className="h-2.5 w-2.5" />
             </button>
-            <span
-              className="absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[9px] backdrop-blur"
-              style={{
-                fontFamily: "var(--font-label)",
-                letterSpacing: "0.1em",
-                background: "rgba(255,255,255,0.85)",
-                color: "var(--color-ink)",
-              }}
-            >
-              AI tagging…
-            </span>
           </div>
         ))}
 
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
-          <Camera className="h-5 w-5" />
+        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
+          <Camera className="h-4 w-4" />
           <span
-            className="text-[10px]"
+            className="text-[9px]"
             style={{
               fontFamily: "var(--font-label)",
               letterSpacing: "0.15em",
@@ -774,10 +758,10 @@ function StepWardrobe({
         </label>
       </div>
 
-      <div className="mt-6 editorial-card p-4 text-xs text-muted-foreground">
+      <div className="mt-3 editorial-card p-3 text-[11px] leading-snug text-muted-foreground">
         <span style={{ color: "var(--color-gold)" }}>Tip · </span>
-        Shoot against a plain background in even light for the cleanest AI tags.
-        You can keep building your wardrobe inside the app — no rush here.
+        Plain background, even light — keeps AI tags clean. No rush, you can
+        keep adding inside the app.
       </div>
     </div>
   );

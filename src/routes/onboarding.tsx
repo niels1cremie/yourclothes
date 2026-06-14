@@ -602,78 +602,61 @@ function PhotoSlot({
 
 function ScanResults() {
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <SectionTitle eyebrow="Your style DNA" title="Refined warm autumn." />
-      <p className="mt-4 text-sm text-muted-foreground">
-        A preview of what we learned. Your full profile lives in your account
-        and updates as you wear more outfits.
-      </p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <ResultCard
           eyebrow="Body"
           rows={[
-            ["Body shape", "Hourglass (confirmed)"],
-            ["Shoulder–hip ratio", "1.02 — balanced"],
-            ["Torso", "Standard length"],
-            ["Emphasize", "Defined waist, hemlines mid-thigh"],
+            ["Shape", "Hourglass"],
+            ["Ratio", "1.02"],
+            ["Torso", "Standard"],
           ]}
         />
         <ResultCard
           eyebrow="Face"
           rows={[
-            ["Face shape", "Oval"],
+            ["Shape", "Oval"],
             ["Undertone", "Warm"],
-            ["Color season", "Autumn"],
-            ["Best collars", "V-neck, scoop, sweetheart"],
+            ["Season", "Autumn"],
           ]}
         />
-        <div className="editorial-card p-5">
-          <span
-            className="text-[10px]"
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.2em",
-              color: "var(--color-gold)",
-            }}
-          >
-            YOUR PALETTE
-          </span>
-          <div className="mt-3 grid grid-cols-6 gap-2">
-            {[
-              "#7E3F1F",
-              "#C8A97E",
-              "#5B7A4A",
-              "#2E3B4E",
-              "#E8DCC4",
-              "#A23B2A",
-            ].map((c) => (
+      </div>
+
+      <div className="mt-2 editorial-card p-3">
+        <span
+          className="text-[10px]"
+          style={{
+            fontFamily: "var(--font-label)",
+            letterSpacing: "0.2em",
+            color: "var(--color-gold)",
+          }}
+        >
+          YOUR PALETTE
+        </span>
+        <div className="mt-2 grid grid-cols-6 gap-1.5">
+          {["#7E3F1F", "#C8A97E", "#5B7A4A", "#2E3B4E", "#E8DCC4", "#A23B2A"].map(
+            (c) => (
               <div
                 key={c}
-                className="aspect-square rounded-lg border border-border"
+                className="aspect-square rounded-md border border-border"
                 style={{ background: c }}
                 title={c}
               />
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Warm earth tones with one cool anchor. Avoid icy pastels.
-          </p>
+            ),
+          )}
         </div>
-        <div className="editorial-card flex items-start gap-3 p-5">
-          <Sparkles className="mt-0.5 h-4 w-4" style={{ color: "var(--color-gold)" }} />
-          <div>
-            <div
-              className="text-sm"
-              style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}
-            >
-              Closest style match
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Sienna Miller meets The Row — softly tailored, earth-toned, lived-in.
-            </p>
-          </div>
-        </div>
+      </div>
+
+      <div className="mt-2 editorial-card flex items-start gap-2 p-3">
+        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "var(--color-gold)" }} />
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          <span className="text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+            Sienna Miller × The Row
+          </span>{" "}
+          — softly tailored, earth-toned, lived-in.
+        </p>
       </div>
     </div>
   );

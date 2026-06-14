@@ -131,19 +131,19 @@ function Onboarding() {
   const back = () => (step > 0 ? setStep(step - 1) : navigate({ to: "/" }));
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+    <main className="h-[100dvh] overflow-hidden bg-background">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-6 pt-6">
+        <header className="flex shrink-0 items-center justify-between px-6 pt-4">
           <button
             onClick={back}
             aria-label="Go back"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-secondary"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-secondary"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <span
-            className="text-[10px]"
+            className="truncate text-[10px]"
             style={{
               fontFamily: "var(--font-label)",
               letterSpacing: "0.25em",
@@ -152,11 +152,11 @@ function Onboarding() {
           >
             STEP {step + 1} OF {STEPS.length} · {STEPS[step].toUpperCase()}
           </span>
-          <span className="h-10 w-10" />
+          <span className="h-9 w-9" />
         </header>
 
         {/* Progress */}
-        <div className="mt-4 flex gap-1 px-6">
+        <div className="mt-3 flex shrink-0 gap-1 px-6">
           {STEPS.map((_, i) => (
             <div
               key={i}
@@ -169,8 +169,8 @@ function Onboarding() {
           ))}
         </div>
 
-        {/* Step body */}
-        <section className="flex-1 px-6 pb-32 pt-8">
+        {/* Step body — fills remaining space, no page scroll */}
+        <section className="flex min-h-0 flex-1 flex-col px-6 pt-4">
           {step === 0 && <StepWelcome />}
           {step === 1 && <StepBasics s={s} update={update} />}
           {step === 2 && <StepMeasurements s={s} update={update} />}
@@ -180,14 +180,8 @@ function Onboarding() {
           {step === 6 && <StepGoals s={s} update={update} />}
         </section>
 
-        {/* Sticky footer CTA */}
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md px-6 pb-6 pt-4"
-          style={{
-            background:
-              "linear-gradient(to top, var(--color-background) 70%, transparent)",
-          }}
-        >
+        {/* Footer CTA */}
+        <div className="shrink-0 px-6 pb-5 pt-3">
           <button
             onClick={next}
             disabled={!canAdvance}
@@ -206,26 +200,26 @@ function Onboarding() {
 
 function StepWelcome() {
   return (
-    <div>
-      <SectionTitle eyebrow="A new beginning" title="Let's build your digital wardrobe." />
-      <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
-        Seven short steps. We'll learn your body, your colors, what's already in
-        your closet — then plan beautiful outfits around your week.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="A new beginning" title="Build your digital wardrobe." />
+      <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
+        Seven short steps. We'll learn your body, colors and closet — then plan
+        outfits around your week.
       </p>
 
-      <div className="mt-8 space-y-3">
+      <div className="mt-5 grid flex-1 grid-cols-2 gap-2 content-start">
         {[
-          { n: "01", t: "You", d: "Name, style tags, the basics." },
-          { n: "02", t: "Body", d: "Measurements and a photo scan." },
-          { n: "03", t: "Wardrobe", d: "Upload pieces — we tag them with AI." },
-          { n: "04", t: "World", d: "Brands, calendar, weather, goals." },
+          { n: "01", t: "You", d: "Name & style tags." },
+          { n: "02", t: "Body", d: "Measurements & scan." },
+          { n: "03", t: "Wardrobe", d: "AI-tagged pieces." },
+          { n: "04", t: "World", d: "Brands & goals." },
         ].map((row) => (
           <div
             key={row.n}
-            className="editorial-card flex items-baseline gap-4 px-5 py-4"
+            className="editorial-card flex flex-col gap-1 px-4 py-3"
           >
             <span
-              className="text-xs"
+              className="text-[10px]"
               style={{
                 fontFamily: "var(--font-label)",
                 letterSpacing: "0.2em",
@@ -234,15 +228,15 @@ function StepWelcome() {
             >
               {row.n}
             </span>
-            <div>
-              <h3
-                className="text-xl"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {row.t}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">{row.d}</p>
-            </div>
+            <h3
+              className="text-lg leading-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {row.t}
+            </h3>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              {row.d}
+            </p>
           </div>
         ))}
       </div>
@@ -288,26 +282,28 @@ function StepBasics({
     );
 
   return (
-    <div>
-      <SectionTitle eyebrow="About you" title="Let's start with the basics." />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="About you" title="Start with the basics." />
 
-      <div className="mt-8 space-y-4">
-        <FieldText
-          label="First name"
-          value={s.name}
-          onChange={(v) => update("name", v)}
-          placeholder="Your name"
-        />
-        <FieldText
-          label="Age (optional)"
-          value={s.age}
-          onChange={(v) => update("age", v.replace(/\D/g, "").slice(0, 3))}
-          placeholder="—"
-          inputMode="numeric"
-        />
+      <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <FieldText
+            label="First name"
+            value={s.name}
+            onChange={(v) => update("name", v)}
+            placeholder="Your name"
+          />
+          <FieldText
+            label="Age (optional)"
+            value={s.age}
+            onChange={(v) => update("age", v.replace(/\D/g, "").slice(0, 3))}
+            placeholder="—"
+            inputMode="numeric"
+          />
+        </div>
 
         <FieldGroup label="Gender identity">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {GENDER_OPTIONS.map((g) => (
               <button
                 key={g}
@@ -324,7 +320,7 @@ function StepBasics({
           label="Style tags"
           hint={`${s.styleTags.length} selected`}
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {STYLE_TAGS.map((t) => (
               <button
                 key={t}
@@ -360,95 +356,72 @@ function StepMeasurements({
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
   return (
-    <div>
-      <SectionTitle eyebrow="Measurements" title="A few proportions help us fit you." />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Measurements" title="A few proportions for fit." />
 
-      {/* Unit toggle */}
-      <div className="mt-6 inline-flex rounded-full border border-border bg-surface p-1">
-        {(["metric", "imperial"] as Units[]).map((u) => (
-          <button
-            key={u}
-            onClick={() => update("units", u)}
-            className={`rounded-full px-4 py-1.5 text-[11px] ${
-              s.units === u ? "bg-ink text-primary-foreground" : "text-muted-foreground"
-            }`}
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              background: s.units === u ? "var(--color-ink)" : "transparent",
-              color:
-                s.units === u
-                  ? "var(--color-primary-foreground)"
-                  : "var(--color-muted-foreground)",
-            }}
-          >
-            {u}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <FieldText
-          label={s.units === "metric" ? "Height (cm)" : "Height (in)"}
-          value={s.heightCm}
-          onChange={(v) => update("heightCm", v.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-        />
-        <FieldText
-          label={s.units === "metric" ? "Weight (kg)" : "Weight (lb)"}
-          value={s.weightKg}
-          onChange={(v) => update("weightKg", v.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-        />
-      </div>
-
-      <FieldGroup label="Sizing region" className="mt-4">
-        <div className="flex gap-2">
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="inline-flex rounded-full border border-border bg-surface p-1">
+          {(["metric", "imperial"] as Units[]).map((u) => (
+            <button
+              key={u}
+              onClick={() => update("units", u)}
+              className="rounded-full px-3 py-1 text-[10px]"
+              style={{
+                fontFamily: "var(--font-label)",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                background: s.units === u ? "var(--color-ink)" : "transparent",
+                color:
+                  s.units === u
+                    ? "var(--color-primary-foreground)"
+                    : "var(--color-muted-foreground)",
+              }}
+            >
+              {u}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
           {(["EU", "US", "UK"] as Region[]).map((r) => (
             <button
               key={r}
               onClick={() => update("region", r)}
-              className={`chip flex-1 justify-center ${
-                s.region === r ? "chip-active" : ""
-              }`}
+              className={`chip ${s.region === r ? "chip-active" : ""}`}
             >
               {r}
             </button>
           ))}
         </div>
-      </FieldGroup>
+      </div>
 
-      <div className="mt-4">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <FieldText
-          label={`Dress size (${s.region})`}
+          label={s.units === "metric" ? "Height cm" : "Height in"}
+          value={s.heightCm}
+          onChange={(v) => update("heightCm", v.replace(/\D/g, "").slice(0, 3))}
+          inputMode="numeric"
+        />
+        <FieldText
+          label={s.units === "metric" ? "Weight kg" : "Weight lb"}
+          value={s.weightKg}
+          onChange={(v) => update("weightKg", v.replace(/\D/g, "").slice(0, 3))}
+          inputMode="numeric"
+        />
+        <FieldText
+          label={`Size ${s.region}`}
           value={s.size}
           onChange={(v) => update("size", v)}
-          placeholder="e.g. 38"
+          placeholder="38"
         />
       </div>
 
-      <details className="mt-4 editorial-card px-5 py-4">
-        <summary
-          className="cursor-pointer text-sm"
-          style={{ fontFamily: "var(--font-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}
-        >
-          Add bust / waist / hips
-        </summary>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <FieldText label="Bust" value={s.bust} onChange={(v) => update("bust", v)} />
-          <FieldText label="Waist" value={s.waist} onChange={(v) => update("waist", v)} />
-          <FieldText label="Hips" value={s.hips} onChange={(v) => update("hips", v)} />
-        </div>
-      </details>
-
-      <FieldGroup label="Body shape (you can change later)" className="mt-6">
-        <div className="grid grid-cols-2 gap-2">
+      <FieldGroup label="Body shape" className="mt-4">
+        <div className="grid grid-cols-3 gap-1.5">
           {BODY_SHAPES.map((b) => (
             <button
               key={b.id}
               onClick={() => update("bodyShape", b.id)}
-              className="rounded-2xl border p-4 text-left transition-colors"
+              className="rounded-xl border p-2 text-center transition-colors"
               style={{
                 borderColor:
                   s.bodyShape === b.id ? "var(--color-gold)" : "var(--color-border)",
@@ -459,13 +432,10 @@ function StepMeasurements({
               }}
             >
               <div
-                className="text-sm"
-                style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}
+                className="text-[12px] leading-tight"
+                style={{ fontFamily: "var(--font-display)" }}
               >
                 {b.label}
-              </div>
-              <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
-                {b.desc}
               </div>
             </button>
           ))}
@@ -509,18 +479,17 @@ function StepScan({
   }
 
   return (
-    <div>
-      <SectionTitle eyebrow="Photo scan" title="Two photos. The AI does the rest." />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Your photos are analyzed for body shape, face shape, undertone and color
-        season. They're never stored on third-party servers.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Photo scan" title="Two photos. AI does the rest." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        Analyzed for body shape, face shape, undertone & color season.
       </p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-4 space-y-2">
         <PhotoSlot
           letter="A"
           title="Full body"
-          hint="Neutral pose · fitted clothing · good light"
+          hint="Neutral pose · fitted clothing"
           imageUrl={s.fullBodyPhoto}
           onUpload={onUpload("fullBodyPhoto")}
           onRemove={() => update("fullBodyPhoto", null)}
@@ -528,7 +497,7 @@ function StepScan({
         <PhotoSlot
           letter="B"
           title="Face close-up"
-          hint="Natural light · no makeup if possible"
+          hint="Natural light"
           imageUrl={s.facePhoto}
           onUpload={onUpload("facePhoto")}
           onRemove={() => update("facePhoto", null)}
@@ -538,7 +507,7 @@ function StepScan({
       <button
         onClick={runScan}
         disabled={!s.fullBodyPhoto || !s.facePhoto || scanning}
-        className="pill-ghost mt-6 w-full"
+        className="pill-ghost mt-4 w-full"
         style={{ borderColor: "var(--color-gold)", color: "var(--color-ink)" }}
       >
         {scanning ? (
@@ -573,9 +542,9 @@ function PhotoSlot({
   onRemove: () => void;
 }) {
   return (
-    <label className="editorial-card group flex cursor-pointer items-center gap-4 p-4">
+    <label className="editorial-card group flex cursor-pointer items-center gap-3 p-3">
       <div
-        className="relative h-20 w-20 flex-none overflow-hidden rounded-xl"
+        className="relative h-14 w-14 flex-none overflow-hidden rounded-lg"
         style={{ background: "var(--color-secondary)" }}
       >
         {imageUrl ? (
@@ -586,11 +555,11 @@ function PhotoSlot({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Camera className="h-5 w-5 text-muted-foreground" />
+            <Camera className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
         <span
-          className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px]"
+          className="absolute left-1 top-1 rounded-full px-1 py-0 text-[9px]"
           style={{
             fontFamily: "var(--font-label)",
             background: "var(--color-ink)",
@@ -601,9 +570,9 @@ function PhotoSlot({
           {letter}
         </span>
       </div>
-      <div className="flex-1">
-        <div className="text-sm font-medium">{title}</div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-medium">{title}</div>
+        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
       </div>
       {imageUrl ? (
         <button
@@ -612,12 +581,12 @@ function PhotoSlot({
             onRemove();
           }}
           aria-label="Remove"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       ) : (
-        <Upload className="h-4 w-4 text-muted-foreground" />
+        <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
       <input
         type="file"
@@ -632,78 +601,61 @@ function PhotoSlot({
 
 function ScanResults() {
   return (
-    <div>
+    <div className="flex h-full flex-col">
       <SectionTitle eyebrow="Your style DNA" title="Refined warm autumn." />
-      <p className="mt-4 text-sm text-muted-foreground">
-        A preview of what we learned. Your full profile lives in your account
-        and updates as you wear more outfits.
-      </p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <ResultCard
           eyebrow="Body"
           rows={[
-            ["Body shape", "Hourglass (confirmed)"],
-            ["Shoulder–hip ratio", "1.02 — balanced"],
-            ["Torso", "Standard length"],
-            ["Emphasize", "Defined waist, hemlines mid-thigh"],
+            ["Shape", "Hourglass"],
+            ["Ratio", "1.02"],
+            ["Torso", "Standard"],
           ]}
         />
         <ResultCard
           eyebrow="Face"
           rows={[
-            ["Face shape", "Oval"],
+            ["Shape", "Oval"],
             ["Undertone", "Warm"],
-            ["Color season", "Autumn"],
-            ["Best collars", "V-neck, scoop, sweetheart"],
+            ["Season", "Autumn"],
           ]}
         />
-        <div className="editorial-card p-5">
-          <span
-            className="text-[10px]"
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.2em",
-              color: "var(--color-gold)",
-            }}
-          >
-            YOUR PALETTE
-          </span>
-          <div className="mt-3 grid grid-cols-6 gap-2">
-            {[
-              "#7E3F1F",
-              "#C8A97E",
-              "#5B7A4A",
-              "#2E3B4E",
-              "#E8DCC4",
-              "#A23B2A",
-            ].map((c) => (
+      </div>
+
+      <div className="mt-2 editorial-card p-3">
+        <span
+          className="text-[10px]"
+          style={{
+            fontFamily: "var(--font-label)",
+            letterSpacing: "0.2em",
+            color: "var(--color-gold)",
+          }}
+        >
+          YOUR PALETTE
+        </span>
+        <div className="mt-2 grid grid-cols-6 gap-1.5">
+          {["#7E3F1F", "#C8A97E", "#5B7A4A", "#2E3B4E", "#E8DCC4", "#A23B2A"].map(
+            (c) => (
               <div
                 key={c}
-                className="aspect-square rounded-lg border border-border"
+                className="aspect-square rounded-md border border-border"
                 style={{ background: c }}
                 title={c}
               />
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Warm earth tones with one cool anchor. Avoid icy pastels.
-          </p>
+            ),
+          )}
         </div>
-        <div className="editorial-card flex items-start gap-3 p-5">
-          <Sparkles className="mt-0.5 h-4 w-4" style={{ color: "var(--color-gold)" }} />
-          <div>
-            <div
-              className="text-sm"
-              style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}
-            >
-              Closest style match
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Sienna Miller meets The Row — softly tailored, earth-toned, lived-in.
-            </p>
-          </div>
-        </div>
+      </div>
+
+      <div className="mt-2 editorial-card flex items-start gap-2 p-3">
+        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "var(--color-gold)" }} />
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          <span className="text-foreground" style={{ fontFamily: "var(--font-display)" }}>
+            Sienna Miller × The Row
+          </span>{" "}
+          — softly tailored, earth-toned, lived-in.
+        </p>
       </div>
     </div>
   );
@@ -717,7 +669,7 @@ function ResultCard({
   rows: [string, string][];
 }) {
   return (
-    <div className="editorial-card p-5">
+    <div className="editorial-card p-3">
       <span
         className="text-[10px]"
         style={{
@@ -728,11 +680,11 @@ function ResultCard({
       >
         {eyebrow}
       </span>
-      <dl className="mt-3 space-y-2">
+      <dl className="mt-2 space-y-1">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex items-baseline justify-between gap-3">
-            <dt className="text-xs text-muted-foreground">{k}</dt>
-            <dd className="text-right text-sm">{v}</dd>
+          <div key={k} className="flex items-baseline justify-between gap-2">
+            <dt className="text-[10px] text-muted-foreground">{k}</dt>
+            <dd className="text-right text-[12px]">{v}</dd>
           </div>
         ))}
       </dl>
@@ -757,22 +709,17 @@ function StepWardrobe({
   };
 
   return (
-    <div>
-      <SectionTitle
-        eyebrow="Your wardrobe"
-        title="Start with five favorite pieces."
-      />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Snap or upload items individually, or a flat-lay of several. The AI
-        will detect category, color, fabric and formality — you can correct
-        anything we get wrong.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Your wardrobe" title="Add five favorite pieces." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        AI detects category, color, fabric and formality. Correct anything later.
       </p>
 
-      <div className="mt-8 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-4 gap-2">
         {s.wardrobePhotos.map((url, i) => (
           <div
             key={i}
-            className="relative aspect-square overflow-hidden rounded-xl border border-border"
+            className="relative aspect-square overflow-hidden rounded-lg border border-border"
           >
             <img src={url} alt="" className="h-full w-full object-cover" />
             <button
@@ -783,28 +730,17 @@ function StepWardrobe({
                 )
               }
               aria-label="Remove"
-              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-background/90"
+              className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/90"
             >
-              <X className="h-3 w-3" />
+              <X className="h-2.5 w-2.5" />
             </button>
-            <span
-              className="absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[9px] backdrop-blur"
-              style={{
-                fontFamily: "var(--font-label)",
-                letterSpacing: "0.1em",
-                background: "rgba(255,255,255,0.85)",
-                color: "var(--color-ink)",
-              }}
-            >
-              AI tagging…
-            </span>
           </div>
         ))}
 
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
-          <Camera className="h-5 w-5" />
+        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
+          <Camera className="h-4 w-4" />
           <span
-            className="text-[10px]"
+            className="text-[9px]"
             style={{
               fontFamily: "var(--font-label)",
               letterSpacing: "0.15em",
@@ -822,10 +758,10 @@ function StepWardrobe({
         </label>
       </div>
 
-      <div className="mt-6 editorial-card p-4 text-xs text-muted-foreground">
+      <div className="mt-3 editorial-card p-3 text-[11px] leading-snug text-muted-foreground">
         <span style={{ color: "var(--color-gold)" }}>Tip · </span>
-        Shoot against a plain background in even light for the cleanest AI tags.
-        You can keep building your wardrobe inside the app — no rush here.
+        Plain background, even light — keeps AI tags clean. No rush, you can
+        keep adding inside the app.
       </div>
     </div>
   );
@@ -858,24 +794,20 @@ function StepBrands({
     );
 
   return (
-    <div>
-      <SectionTitle
-        eyebrow="Brands"
-        title="Pull your purchase history in."
-      />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Past orders auto-import into your wardrobe with AI tags. Skip any —
-        you can connect more later in Settings.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Brands" title="Pull your purchase history." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        Past orders auto-import with AI tags. Connect more later in Settings.
       </p>
 
-      <div className="mt-8 space-y-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {BRANDS.map((b) => {
           const on = s.connectedBrands.includes(b.id);
           return (
             <button
               key={b.id}
               onClick={() => toggle(b.id)}
-              className="flex w-full items-center justify-between rounded-2xl border bg-surface px-5 py-4 text-left transition-colors"
+              className="flex items-center justify-between rounded-xl border bg-surface px-3 py-2.5 text-left transition-colors"
               style={{
                 borderColor: on ? "var(--color-gold)" : "var(--color-border)",
                 background: on
@@ -883,36 +815,28 @@ function StepBrands({
                   : "var(--color-surface)",
               }}
             >
-              <div>
+              <div className="min-w-0">
                 <div
-                  className="text-base"
-                  style={{ fontFamily: "var(--font-display)", fontSize: "1.15rem" }}
+                  className="truncate text-base leading-tight"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   {b.name}
                 </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
+                <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
                   {b.note}
                 </div>
               </div>
               <span
-                className="flex h-9 items-center justify-center rounded-full px-4 text-[10px]"
+                className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
                 style={{
-                  fontFamily: "var(--font-label)",
-                  letterSpacing: "0.15em",
                   background: on ? "var(--color-ink)" : "transparent",
+                  border: on ? "none" : "1px solid var(--color-border)",
                   color: on
                     ? "var(--color-primary-foreground)"
                     : "var(--color-foreground)",
-                  border: on ? "none" : "1px solid var(--color-border)",
                 }}
               >
-                {on ? (
-                  <>
-                    <Check className="mr-1 h-3 w-3" /> CONNECTED
-                  </>
-                ) : (
-                  "CONNECT"
-                )}
+                {on ? <Check className="h-3 w-3" /> : <span className="text-xs">+</span>}
               </span>
             </button>
           );
@@ -950,11 +874,11 @@ function StepGoals({
     );
 
   return (
-    <div>
-      <SectionTitle eyebrow="Style goals" title="What should MIRROR optimize for?" />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Style goals" title="What should MIRROR optimize?" />
 
-      <FieldGroup label="Occasions to prioritize" className="mt-8">
-        <div className="flex flex-wrap gap-2">
+      <FieldGroup label="Occasions" className="mt-3">
+        <div className="flex flex-wrap gap-1.5">
           {OCCASIONS.map((o) => (
             <button
               key={o}
@@ -967,7 +891,7 @@ function StepGoals({
         </div>
       </FieldGroup>
 
-      <FieldGroup label={`Budget per item: €${s.budget}`} className="mt-6">
+      <FieldGroup label={`Budget per item: €${s.budget}`} className="mt-3">
         <input
           type="range"
           min={20}
@@ -975,43 +899,28 @@ function StepGoals({
           step={10}
           value={s.budget}
           onChange={(e) => update("budget", Number(e.target.value))}
-          className="mt-2 w-full accent-foreground"
+          className="mt-1 w-full"
           style={{ accentColor: "var(--color-gold)" }}
         />
-        <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground">
           <span>€20</span>
           <span>€500+</span>
         </div>
       </FieldGroup>
 
-      <ToggleRow
-        label="Prioritize sustainable & secondhand"
-        sub="We'll surface eco-friendly options first in Shop."
-        on={s.sustainable}
-        onChange={(v) => update("sustainable", v)}
-      />
-      <ToggleRow
-        label="Building a capsule wardrobe"
-        sub="MIRROR will favor versatile, mix-and-match recommendations."
-        on={s.capsule}
-        onChange={(v) => update("capsule", v)}
-      />
-
-      <div className="mt-8 editorial-card p-5 text-sm">
-        <div
-          className="text-[10px]"
-          style={{
-            fontFamily: "var(--font-label)",
-            letterSpacing: "0.2em",
-            color: "var(--color-gold)",
-          }}
-        >
-          NEXT
-        </div>
-        <p className="mt-2 text-muted-foreground">
-          Once you enter MIRROR you'll meet your wardrobe, outfit generator,
-          and the smart planner — all tuned to what you just told us.
-        </p>
+      <div className="mt-3 space-y-2">
+        <ToggleRow
+          label="Sustainable & secondhand"
+          sub="Eco-friendly first in Shop."
+          on={s.sustainable}
+          onChange={(v) => update("sustainable", v)}
+        />
+        <ToggleRow
+          label="Capsule wardrobe"
+          sub="Favor versatile, mix-and-match."
+          on={s.capsule}
+          onChange={(v) => update("capsule", v)}
+        />
       </div>
     </div>
   );
@@ -1033,12 +942,12 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
         {eyebrow.toUpperCase()}
       </span>
       <h2
-        className="mt-3 text-3xl leading-tight"
+        className="mt-1.5 text-[1.625rem] leading-[1.1]"
         style={{ fontFamily: "var(--font-display)" }}
       >
         {title}
       </h2>
-      <div className="mt-3 h-px w-10" style={{ background: "var(--color-gold)" }} />
+      <div className="mt-2 h-px w-10" style={{ background: "var(--color-gold)" }} />
     </div>
   );
 }

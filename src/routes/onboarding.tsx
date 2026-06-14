@@ -200,26 +200,26 @@ function Onboarding() {
 
 function StepWelcome() {
   return (
-    <div>
-      <SectionTitle eyebrow="A new beginning" title="Let's build your digital wardrobe." />
-      <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
-        Seven short steps. We'll learn your body, your colors, what's already in
-        your closet — then plan beautiful outfits around your week.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="A new beginning" title="Build your digital wardrobe." />
+      <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
+        Seven short steps. We'll learn your body, colors and closet — then plan
+        outfits around your week.
       </p>
 
-      <div className="mt-8 space-y-3">
+      <div className="mt-5 grid flex-1 grid-cols-2 gap-2 content-start">
         {[
-          { n: "01", t: "You", d: "Name, style tags, the basics." },
-          { n: "02", t: "Body", d: "Measurements and a photo scan." },
-          { n: "03", t: "Wardrobe", d: "Upload pieces — we tag them with AI." },
-          { n: "04", t: "World", d: "Brands, calendar, weather, goals." },
+          { n: "01", t: "You", d: "Name & style tags." },
+          { n: "02", t: "Body", d: "Measurements & scan." },
+          { n: "03", t: "Wardrobe", d: "AI-tagged pieces." },
+          { n: "04", t: "World", d: "Brands & goals." },
         ].map((row) => (
           <div
             key={row.n}
-            className="editorial-card flex items-baseline gap-4 px-5 py-4"
+            className="editorial-card flex flex-col gap-1 px-4 py-3"
           >
             <span
-              className="text-xs"
+              className="text-[10px]"
               style={{
                 fontFamily: "var(--font-label)",
                 letterSpacing: "0.2em",
@@ -228,15 +228,15 @@ function StepWelcome() {
             >
               {row.n}
             </span>
-            <div>
-              <h3
-                className="text-xl"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {row.t}
-              </h3>
-              <p className="mt-1 text-sm text-muted-foreground">{row.d}</p>
-            </div>
+            <h3
+              className="text-lg leading-tight"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              {row.t}
+            </h3>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              {row.d}
+            </p>
           </div>
         ))}
       </div>

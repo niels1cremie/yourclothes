@@ -874,11 +874,11 @@ function StepGoals({
     );
 
   return (
-    <div>
-      <SectionTitle eyebrow="Style goals" title="What should MIRROR optimize for?" />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Style goals" title="What should MIRROR optimize?" />
 
-      <FieldGroup label="Occasions to prioritize" className="mt-8">
-        <div className="flex flex-wrap gap-2">
+      <FieldGroup label="Occasions" className="mt-3">
+        <div className="flex flex-wrap gap-1.5">
           {OCCASIONS.map((o) => (
             <button
               key={o}
@@ -891,7 +891,7 @@ function StepGoals({
         </div>
       </FieldGroup>
 
-      <FieldGroup label={`Budget per item: €${s.budget}`} className="mt-6">
+      <FieldGroup label={`Budget per item: €${s.budget}`} className="mt-3">
         <input
           type="range"
           min={20}
@@ -899,43 +899,28 @@ function StepGoals({
           step={10}
           value={s.budget}
           onChange={(e) => update("budget", Number(e.target.value))}
-          className="mt-2 w-full accent-foreground"
+          className="mt-1 w-full"
           style={{ accentColor: "var(--color-gold)" }}
         />
-        <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+        <div className="mt-0.5 flex justify-between text-[10px] text-muted-foreground">
           <span>€20</span>
           <span>€500+</span>
         </div>
       </FieldGroup>
 
-      <ToggleRow
-        label="Prioritize sustainable & secondhand"
-        sub="We'll surface eco-friendly options first in Shop."
-        on={s.sustainable}
-        onChange={(v) => update("sustainable", v)}
-      />
-      <ToggleRow
-        label="Building a capsule wardrobe"
-        sub="MIRROR will favor versatile, mix-and-match recommendations."
-        on={s.capsule}
-        onChange={(v) => update("capsule", v)}
-      />
-
-      <div className="mt-8 editorial-card p-5 text-sm">
-        <div
-          className="text-[10px]"
-          style={{
-            fontFamily: "var(--font-label)",
-            letterSpacing: "0.2em",
-            color: "var(--color-gold)",
-          }}
-        >
-          NEXT
-        </div>
-        <p className="mt-2 text-muted-foreground">
-          Once you enter MIRROR you'll meet your wardrobe, outfit generator,
-          and the smart planner — all tuned to what you just told us.
-        </p>
+      <div className="mt-3 space-y-2">
+        <ToggleRow
+          label="Sustainable & secondhand"
+          sub="Eco-friendly first in Shop."
+          on={s.sustainable}
+          onChange={(v) => update("sustainable", v)}
+        />
+        <ToggleRow
+          label="Capsule wardrobe"
+          sub="Favor versatile, mix-and-match."
+          on={s.capsule}
+          onChange={(v) => update("capsule", v)}
+        />
       </div>
     </div>
   );

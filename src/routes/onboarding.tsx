@@ -282,26 +282,28 @@ function StepBasics({
     );
 
   return (
-    <div>
-      <SectionTitle eyebrow="About you" title="Let's start with the basics." />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="About you" title="Start with the basics." />
 
-      <div className="mt-8 space-y-4">
-        <FieldText
-          label="First name"
-          value={s.name}
-          onChange={(v) => update("name", v)}
-          placeholder="Your name"
-        />
-        <FieldText
-          label="Age (optional)"
-          value={s.age}
-          onChange={(v) => update("age", v.replace(/\D/g, "").slice(0, 3))}
-          placeholder="—"
-          inputMode="numeric"
-        />
+      <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <FieldText
+            label="First name"
+            value={s.name}
+            onChange={(v) => update("name", v)}
+            placeholder="Your name"
+          />
+          <FieldText
+            label="Age (optional)"
+            value={s.age}
+            onChange={(v) => update("age", v.replace(/\D/g, "").slice(0, 3))}
+            placeholder="—"
+            inputMode="numeric"
+          />
+        </div>
 
         <FieldGroup label="Gender identity">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {GENDER_OPTIONS.map((g) => (
               <button
                 key={g}
@@ -318,7 +320,7 @@ function StepBasics({
           label="Style tags"
           hint={`${s.styleTags.length} selected`}
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {STYLE_TAGS.map((t) => (
               <button
                 key={t}

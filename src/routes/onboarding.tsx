@@ -354,95 +354,72 @@ function StepMeasurements({
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
   return (
-    <div>
-      <SectionTitle eyebrow="Measurements" title="A few proportions help us fit you." />
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Measurements" title="A few proportions for fit." />
 
-      {/* Unit toggle */}
-      <div className="mt-6 inline-flex rounded-full border border-border bg-surface p-1">
-        {(["metric", "imperial"] as Units[]).map((u) => (
-          <button
-            key={u}
-            onClick={() => update("units", u)}
-            className={`rounded-full px-4 py-1.5 text-[11px] ${
-              s.units === u ? "bg-ink text-primary-foreground" : "text-muted-foreground"
-            }`}
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              background: s.units === u ? "var(--color-ink)" : "transparent",
-              color:
-                s.units === u
-                  ? "var(--color-primary-foreground)"
-                  : "var(--color-muted-foreground)",
-            }}
-          >
-            {u}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3">
-        <FieldText
-          label={s.units === "metric" ? "Height (cm)" : "Height (in)"}
-          value={s.heightCm}
-          onChange={(v) => update("heightCm", v.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-        />
-        <FieldText
-          label={s.units === "metric" ? "Weight (kg)" : "Weight (lb)"}
-          value={s.weightKg}
-          onChange={(v) => update("weightKg", v.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-        />
-      </div>
-
-      <FieldGroup label="Sizing region" className="mt-4">
-        <div className="flex gap-2">
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="inline-flex rounded-full border border-border bg-surface p-1">
+          {(["metric", "imperial"] as Units[]).map((u) => (
+            <button
+              key={u}
+              onClick={() => update("units", u)}
+              className="rounded-full px-3 py-1 text-[10px]"
+              style={{
+                fontFamily: "var(--font-label)",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                background: s.units === u ? "var(--color-ink)" : "transparent",
+                color:
+                  s.units === u
+                    ? "var(--color-primary-foreground)"
+                    : "var(--color-muted-foreground)",
+              }}
+            >
+              {u}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
           {(["EU", "US", "UK"] as Region[]).map((r) => (
             <button
               key={r}
               onClick={() => update("region", r)}
-              className={`chip flex-1 justify-center ${
-                s.region === r ? "chip-active" : ""
-              }`}
+              className={`chip ${s.region === r ? "chip-active" : ""}`}
             >
               {r}
             </button>
           ))}
         </div>
-      </FieldGroup>
+      </div>
 
-      <div className="mt-4">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <FieldText
-          label={`Dress size (${s.region})`}
+          label={s.units === "metric" ? "Height cm" : "Height in"}
+          value={s.heightCm}
+          onChange={(v) => update("heightCm", v.replace(/\D/g, "").slice(0, 3))}
+          inputMode="numeric"
+        />
+        <FieldText
+          label={s.units === "metric" ? "Weight kg" : "Weight lb"}
+          value={s.weightKg}
+          onChange={(v) => update("weightKg", v.replace(/\D/g, "").slice(0, 3))}
+          inputMode="numeric"
+        />
+        <FieldText
+          label={`Size ${s.region}`}
           value={s.size}
           onChange={(v) => update("size", v)}
-          placeholder="e.g. 38"
+          placeholder="38"
         />
       </div>
 
-      <details className="mt-4 editorial-card px-5 py-4">
-        <summary
-          className="cursor-pointer text-sm"
-          style={{ fontFamily: "var(--font-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}
-        >
-          Add bust / waist / hips
-        </summary>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <FieldText label="Bust" value={s.bust} onChange={(v) => update("bust", v)} />
-          <FieldText label="Waist" value={s.waist} onChange={(v) => update("waist", v)} />
-          <FieldText label="Hips" value={s.hips} onChange={(v) => update("hips", v)} />
-        </div>
-      </details>
-
-      <FieldGroup label="Body shape (you can change later)" className="mt-6">
-        <div className="grid grid-cols-2 gap-2">
+      <FieldGroup label="Body shape" className="mt-4">
+        <div className="grid grid-cols-3 gap-1.5">
           {BODY_SHAPES.map((b) => (
             <button
               key={b.id}
               onClick={() => update("bodyShape", b.id)}
-              className="rounded-2xl border p-4 text-left transition-colors"
+              className="rounded-xl border p-2 text-center transition-colors"
               style={{
                 borderColor:
                   s.bodyShape === b.id ? "var(--color-gold)" : "var(--color-border)",
@@ -453,13 +430,10 @@ function StepMeasurements({
               }}
             >
               <div
-                className="text-sm"
-                style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}
+                className="text-[12px] leading-tight"
+                style={{ fontFamily: "var(--font-display)" }}
               >
                 {b.label}
-              </div>
-              <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
-                {b.desc}
               </div>
             </button>
           ))}

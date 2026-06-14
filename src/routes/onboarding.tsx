@@ -542,9 +542,9 @@ function PhotoSlot({
   onRemove: () => void;
 }) {
   return (
-    <label className="editorial-card group flex cursor-pointer items-center gap-4 p-4">
+    <label className="editorial-card group flex cursor-pointer items-center gap-3 p-3">
       <div
-        className="relative h-20 w-20 flex-none overflow-hidden rounded-xl"
+        className="relative h-14 w-14 flex-none overflow-hidden rounded-lg"
         style={{ background: "var(--color-secondary)" }}
       >
         {imageUrl ? (
@@ -555,11 +555,11 @@ function PhotoSlot({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <Camera className="h-5 w-5 text-muted-foreground" />
+            <Camera className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
         <span
-          className="absolute left-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[10px]"
+          className="absolute left-1 top-1 rounded-full px-1 py-0 text-[9px]"
           style={{
             fontFamily: "var(--font-label)",
             background: "var(--color-ink)",
@@ -570,9 +570,9 @@ function PhotoSlot({
           {letter}
         </span>
       </div>
-      <div className="flex-1">
-        <div className="text-sm font-medium">{title}</div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-medium">{title}</div>
+        <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
       </div>
       {imageUrl ? (
         <button
@@ -581,12 +581,12 @@ function PhotoSlot({
             onRemove();
           }}
           aria-label="Remove"
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       ) : (
-        <Upload className="h-4 w-4 text-muted-foreground" />
+        <Upload className="h-4 w-4 shrink-0 text-muted-foreground" />
       )}
       <input
         type="file"

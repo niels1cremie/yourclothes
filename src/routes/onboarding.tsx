@@ -1027,12 +1027,12 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
         {eyebrow.toUpperCase()}
       </span>
       <h2
-        className="mt-3 text-3xl leading-tight"
+        className="mt-1.5 text-[1.625rem] leading-[1.1]"
         style={{ fontFamily: "var(--font-display)" }}
       >
         {title}
       </h2>
-      <div className="mt-3 h-px w-10" style={{ background: "var(--color-gold)" }} />
+      <div className="mt-2 h-px w-10" style={{ background: "var(--color-gold)" }} />
     </div>
   );
 }

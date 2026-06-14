@@ -479,18 +479,17 @@ function StepScan({
   }
 
   return (
-    <div>
-      <SectionTitle eyebrow="Photo scan" title="Two photos. The AI does the rest." />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Your photos are analyzed for body shape, face shape, undertone and color
-        season. They're never stored on third-party servers.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Photo scan" title="Two photos. AI does the rest." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        Analyzed for body shape, face shape, undertone & color season.
       </p>
 
-      <div className="mt-8 space-y-4">
+      <div className="mt-4 space-y-2">
         <PhotoSlot
           letter="A"
           title="Full body"
-          hint="Neutral pose · fitted clothing · good light"
+          hint="Neutral pose · fitted clothing"
           imageUrl={s.fullBodyPhoto}
           onUpload={onUpload("fullBodyPhoto")}
           onRemove={() => update("fullBodyPhoto", null)}
@@ -498,7 +497,7 @@ function StepScan({
         <PhotoSlot
           letter="B"
           title="Face close-up"
-          hint="Natural light · no makeup if possible"
+          hint="Natural light"
           imageUrl={s.facePhoto}
           onUpload={onUpload("facePhoto")}
           onRemove={() => update("facePhoto", null)}
@@ -508,7 +507,7 @@ function StepScan({
       <button
         onClick={runScan}
         disabled={!s.fullBodyPhoto || !s.facePhoto || scanning}
-        className="pill-ghost mt-6 w-full"
+        className="pill-ghost mt-4 w-full"
         style={{ borderColor: "var(--color-gold)", color: "var(--color-ink)" }}
       >
         {scanning ? (

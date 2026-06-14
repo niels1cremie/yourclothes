@@ -794,24 +794,20 @@ function StepBrands({
     );
 
   return (
-    <div>
-      <SectionTitle
-        eyebrow="Brands"
-        title="Pull your purchase history in."
-      />
-      <p className="mt-4 text-sm text-muted-foreground">
-        Past orders auto-import into your wardrobe with AI tags. Skip any —
-        you can connect more later in Settings.
+    <div className="flex h-full flex-col">
+      <SectionTitle eyebrow="Brands" title="Pull your purchase history." />
+      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
+        Past orders auto-import with AI tags. Connect more later in Settings.
       </p>
 
-      <div className="mt-8 space-y-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {BRANDS.map((b) => {
           const on = s.connectedBrands.includes(b.id);
           return (
             <button
               key={b.id}
               onClick={() => toggle(b.id)}
-              className="flex w-full items-center justify-between rounded-2xl border bg-surface px-5 py-4 text-left transition-colors"
+              className="flex items-center justify-between rounded-xl border bg-surface px-3 py-2.5 text-left transition-colors"
               style={{
                 borderColor: on ? "var(--color-gold)" : "var(--color-border)",
                 background: on
@@ -819,36 +815,28 @@ function StepBrands({
                   : "var(--color-surface)",
               }}
             >
-              <div>
+              <div className="min-w-0">
                 <div
-                  className="text-base"
-                  style={{ fontFamily: "var(--font-display)", fontSize: "1.15rem" }}
+                  className="truncate text-base leading-tight"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   {b.name}
                 </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
+                <div className="mt-0.5 truncate text-[10px] text-muted-foreground">
                   {b.note}
                 </div>
               </div>
               <span
-                className="flex h-9 items-center justify-center rounded-full px-4 text-[10px]"
+                className="ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
                 style={{
-                  fontFamily: "var(--font-label)",
-                  letterSpacing: "0.15em",
                   background: on ? "var(--color-ink)" : "transparent",
+                  border: on ? "none" : "1px solid var(--color-border)",
                   color: on
                     ? "var(--color-primary-foreground)"
                     : "var(--color-foreground)",
-                  border: on ? "none" : "1px solid var(--color-border)",
                 }}
               >
-                {on ? (
-                  <>
-                    <Check className="mr-1 h-3 w-3" /> CONNECTED
-                  </>
-                ) : (
-                  "CONNECT"
-                )}
+                {on ? <Check className="h-3 w-3" /> : <span className="text-xs">+</span>}
               </span>
             </button>
           );

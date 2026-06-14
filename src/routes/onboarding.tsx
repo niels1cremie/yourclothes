@@ -131,19 +131,19 @@ function Onboarding() {
   const back = () => (step > 0 ? setStep(step - 1) : navigate({ to: "/" }));
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+    <main className="h-[100dvh] overflow-hidden bg-background">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col">
         {/* Header */}
-        <header className="flex items-center justify-between px-6 pt-6">
+        <header className="flex shrink-0 items-center justify-between px-6 pt-4">
           <button
             onClick={back}
             aria-label="Go back"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-secondary"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-secondary"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <span
-            className="text-[10px]"
+            className="truncate text-[10px]"
             style={{
               fontFamily: "var(--font-label)",
               letterSpacing: "0.25em",
@@ -152,11 +152,11 @@ function Onboarding() {
           >
             STEP {step + 1} OF {STEPS.length} · {STEPS[step].toUpperCase()}
           </span>
-          <span className="h-10 w-10" />
+          <span className="h-9 w-9" />
         </header>
 
         {/* Progress */}
-        <div className="mt-4 flex gap-1 px-6">
+        <div className="mt-3 flex shrink-0 gap-1 px-6">
           {STEPS.map((_, i) => (
             <div
               key={i}
@@ -169,8 +169,8 @@ function Onboarding() {
           ))}
         </div>
 
-        {/* Step body */}
-        <section className="flex-1 px-6 pb-32 pt-8">
+        {/* Step body — fills remaining space, no page scroll */}
+        <section className="flex min-h-0 flex-1 flex-col px-6 pt-4">
           {step === 0 && <StepWelcome />}
           {step === 1 && <StepBasics s={s} update={update} />}
           {step === 2 && <StepMeasurements s={s} update={update} />}
@@ -180,14 +180,8 @@ function Onboarding() {
           {step === 6 && <StepGoals s={s} update={update} />}
         </section>
 
-        {/* Sticky footer CTA */}
-        <div
-          className="fixed inset-x-0 bottom-0 mx-auto w-full max-w-md px-6 pb-6 pt-4"
-          style={{
-            background:
-              "linear-gradient(to top, var(--color-background) 70%, transparent)",
-          }}
-        >
+        {/* Footer CTA */}
+        <div className="shrink-0 px-6 pb-5 pt-3">
           <button
             onClick={next}
             disabled={!canAdvance}

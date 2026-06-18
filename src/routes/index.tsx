@@ -115,7 +115,7 @@ function Welcome() {
         </ul>
 
         {/* CTA */}
-        <div className="mt-auto px-6 pb-10 pt-10">
+        <div className="mt-auto px-6 pb-6 pt-10">
           <Link to="/onboarding" className="pill-button w-full">
             Begin
             <span aria-hidden>→</span>
@@ -127,6 +127,25 @@ function Welcome() {
             Takes about 4 minutes · Your photos stay private
           </p>
         </div>
+
+        <footer
+          className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-6 pb-8 text-[10px]"
+          style={{
+            fontFamily: "var(--font-label)",
+            letterSpacing: "0.2em",
+            color: "var(--color-muted-foreground)",
+          }}
+        >
+          <Link to="/pricing">PRICING</Link>
+          <span aria-hidden>·</span>
+          <Link to="/privacy">PRIVACY</Link>
+          <span aria-hidden>·</span>
+          <Link to="/terms">TERMS</Link>
+          <span aria-hidden>·</span>
+          <Link to="/cookies">COOKIES</Link>
+          <span aria-hidden>·</span>
+          <Link to="/refunds">REFUNDS</Link>
+        </footer>
       </div>
     </main>
   );

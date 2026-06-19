@@ -10,11 +10,25 @@ export const Route = createFileRoute("/refunds")({
   }),
   component: () => (
     <LegalLayout title="Refund Policy" updated="Last updated: June 2026">
+      <div
+        className="not-prose mb-4 rounded-xl border border-foreground/15 p-4 text-sm"
+        style={{ color: "var(--color-muted-foreground)" }}
+      >
+        <strong>Test / early-access notice.</strong> MIRROR is currently free
+        during early access. No payments are being processed and no charges
+        are being made. The terms below describe how refunds will be handled
+        once paid plans are enabled and you affirmatively start a paid
+        subscription. Until then, there is nothing to refund — if you believe
+        you were charged, contact{" "}
+        <a href="mailto:billing@mirror.app">billing@mirror.app</a> right away.
+      </div>
+
       <p>
         MIRROR offers free trials so you can evaluate paid plans before
-        committing. Because of this, all payments made for subscriptions and
-        one-time purchases are <strong>non-refundable</strong>, except as
-        required by applicable law.
+        committing. Because of this, once paid plans are live, all payments
+        made for subscriptions and one-time purchases are{" "}
+        <strong>non-refundable</strong>, except as required by applicable
+        law.
       </p>
 
       <h2>1. Free trials</h2>
@@ -56,7 +70,18 @@ export const Route = createFileRoute("/refunds")({
       </p>
 
       <h2>6. Contact</h2>
-      <p>Questions? Email billing@mirror.app.</p>
+      <p>
+        Billing questions: <a href="mailto:billing@mirror.app">billing@mirror.app</a>.
+        Legal requests and formal complaints:{" "}
+        <a href="mailto:legal@mirror.app">legal@mirror.app</a>.
+      </p>
+
+      <h2>7. Disclaimer</h2>
+      <p>
+        This policy is provided for transparency and is not legal advice.
+        Nothing here waives mandatory consumer-protection rights you may have
+        under your local law.
+      </p>
     </LegalLayout>
   ),
 });

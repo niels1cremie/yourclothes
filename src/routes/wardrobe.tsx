@@ -9,13 +9,14 @@ import { fetchWardrobe, type WardrobeItem } from "@/lib/wardrobe";
 import { WARDROBE_CATEGORIES, type WardrobeCategory } from "@/lib/wardrobe-categories";
 
 interface WardrobeSearch {
-  welcome: boolean;
+  welcome?: true;
 }
 
 export const Route = createFileRoute("/wardrobe")({
-  validateSearch: (search: Record<string, unknown>): WardrobeSearch => ({
-    welcome: search.welcome === true || search.welcome === "true",
-  }),
+  validateSearch: (search: Record<string, unknown>): WardrobeSearch => {
+    const welcome = search.welcome === true || search.welcome === "true";
+    return welcome ? { welcome: true } : {};
+  },
   head: () => ({
     meta: [
       { title: "Garderobe — MIRROR" },

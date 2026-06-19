@@ -18,6 +18,18 @@ export const Route = createFileRoute("/privacy")({
         Service you agree to the practices described here.
       </p>
 
+      <div
+        className="not-prose my-4 rounded-xl border border-foreground/15 p-4 text-sm"
+        style={{ color: "var(--color-muted-foreground)" }}
+      >
+        <strong>Test / early-access notice.</strong> MIRROR is currently in
+        early access. The pricing plans shown on the <a href="/pricing">Pricing</a>{" "}
+        page are displayed for testing only — no payments are processed and no
+        billing data is collected at this time. When paid plans go live, this
+        policy will be updated and you will be notified in-product before any
+        charge.
+      </div>
+
       <h2>1. Information we collect</h2>
       <ul>
         <li><strong>Account information</strong> — name, email, and authentication identifiers you provide.</li>
@@ -91,8 +103,41 @@ export const Route = createFileRoute("/privacy")({
         communicated through the Service.
       </p>
 
-      <h2>11. Contact</h2>
-      <p>Questions? Email privacy@mirror.app.</p>
+      <h2>11. California Privacy Rights (CCPA / CPRA)</h2>
+      <p>
+        California residents have additional rights, including the right to
+        know, access, delete, correct, and port their personal information;
+        the right to opt out of "sale" or "sharing" for cross-context
+        behavioral advertising; and the right to limit use of sensitive
+        personal information. <strong>MIRROR does not sell or share personal
+        information for cross-context behavioral advertising.</strong> To
+        exercise your rights — including a "Do Not Sell or Share" opt-out —
+        visit our <a href="/privacy-rights">Your Privacy Rights</a> page or
+        email <a href="mailto:legal@mirror.app">legal@mirror.app</a>. We
+        honor Global Privacy Control (GPC) browser signals as an opt-out.
+      </p>
+
+      <h2>12. Data processing & subprocessors</h2>
+      <p>
+        See our <a href="/dpa">Data Processing Addendum</a> for the list of
+        subprocessors (including our cloud and AI providers) and detailed
+        retention periods.
+      </p>
+
+      <h2>13. Disclaimers</h2>
+      <p>
+        This policy is provided for transparency and does not create a
+        contract. To the extent permitted by law, the Service and any
+        information on this page are provided "as is" without warranties of
+        any kind. Specific rights you have under local law are unaffected.
+      </p>
+
+      <h2>14. Contact</h2>
+      <p>
+        General privacy questions: <a href="mailto:privacy@mirror.app">privacy@mirror.app</a>.
+        Legal requests (data subject requests, law enforcement, DPA, formal
+        complaints): <a href="mailto:legal@mirror.app">legal@mirror.app</a>.
+      </p>
     </LegalLayout>
   ),
 });

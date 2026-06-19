@@ -61,6 +61,8 @@ export function LegalLayout({
           <Link to="/terms">TERMS</Link>
           <Link to="/cookies">COOKIES</Link>
           <Link to="/refunds">REFUNDS</Link>
+          <Link to="/dpa">DPA</Link>
+          <Link to="/privacy-rights">YOUR RIGHTS</Link>
         </footer>
       </div>
     </main>

@@ -16,6 +16,20 @@ export const Route = createFileRoute("/terms")({
         these Terms.
       </p>
 
+      <div
+        className="not-prose my-4 rounded-xl border border-foreground/15 p-4 text-sm"
+        style={{ color: "var(--color-muted-foreground)" }}
+      >
+        <strong>Test / early-access pricing.</strong> The plans shown on the{" "}
+        <a href="/pricing">Pricing</a> page are displayed for evaluation
+        purposes only. MIRROR is currently free during early access — we are
+        not charging users, not running a checkout, and not collecting
+        payment-method data. Sections 5 (Subscriptions & billing) and the{" "}
+        <a href="/refunds">Refund Policy</a> describe how paid plans will
+        work once enabled; they take effect only after paid plans are
+        announced in-product and you affirmatively start a subscription.
+      </div>
+
       <h2>1. Eligibility</h2>
       <p>You must be at least 13 years old (or the minimum age in your jurisdiction) to use the Service.</p>
 
@@ -89,7 +103,12 @@ export const Route = createFileRoute("/terms")({
       <p>We may update these Terms. Continued use after changes constitutes acceptance.</p>
 
       <h2>13. Contact</h2>
-      <p>Questions? Email legal@mirror.app.</p>
+      <p>
+        General questions: <a href="mailto:hello@mirror.app">hello@mirror.app</a>.
+        Legal notices, data requests, and formal complaints:{" "}
+        <a href="mailto:legal@mirror.app">legal@mirror.app</a>. Billing:{" "}
+        <a href="mailto:billing@mirror.app">billing@mirror.app</a>.
+      </p>
     </LegalLayout>
   ),
 });

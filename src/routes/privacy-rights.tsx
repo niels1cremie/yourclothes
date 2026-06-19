@@ -179,5 +179,5 @@ function PrivacyRights() {
         subject line "Privacy Request".
       </p>
     </LegalLayout>
-  ),
-});
+  );
+}

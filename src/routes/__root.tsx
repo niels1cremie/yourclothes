@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CookieConsent } from "../components/CookieConsent";
+import { SubscriptionProvider } from "../context/SubscriptionContext";
+import { DevSandboxController } from "../components/DevSandboxController";
 
 function NotFoundComponent() {
   return (
@@ -129,9 +131,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
-      <CookieConsent />
+      <SubscriptionProvider>
+        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+        <Outlet />
+        <CookieConsent />
+        <DevSandboxController />
+      </SubscriptionProvider>
     </QueryClientProvider>
   );
 }

@@ -1,5 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import confetti from "canvas-confetti";
+
+import { useSubscription } from "@/context/SubscriptionContext";
+import { PLAN_TO_TIER, type PlanId } from "@/lib/subscription";
+import { CheckoutModal } from "@/components/CheckoutModal";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -12,8 +17,6 @@ export const Route = createFileRoute("/pricing")({
   }),
   component: Pricing,
 });
-
-type PlanId = "free" | "pro_monthly" | "pro_yearly";
 
 const plans: Array<{
   id: PlanId;
@@ -75,7 +78,46 @@ const plans: Array<{
 ];
 
 function Pricing() {
-  const [selected, setSelected] = useState<PlanId | null>(null);
+  const navigate = useNavigate();
+  const { tier, setTier } = useSubscription();
+  const [checkoutPlan, setCheckoutPlan] = useState<PlanId | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  const activePlan = plans.find((p) => p.id === checkoutPlan) ?? null;
+
+  const handleCtaClick = (planId: PlanId) => {
+    if (planId === "free") {
+      void setTier("atelier");
+      return;
+    }
+    setCheckoutPlan(planId);
+  };
+
+  const fireConfetti = () => {
+    const burst = (originX: number) =>
+      confetti({
+        particleCount: 90,
+        spread: 70,
+        startVelocity: 45,
+        origin: { x: originX, y: 0.7 },
+        colors: ["#C8A96A", "#0A0A0A", "#F7F5F2", "#8C6E3F"],
+      });
+    burst(0.25);
+    burst(0.5);
+    burst(0.75);
+  };
+
+  const confirmPayment = async () => {
+    if (!activePlan) return;
+    setProcessing(true);
+    // Simulated authorization delay.
+    await new Promise((resolve) => window.setTimeout(resolve, 1600));
+    await setTier(PLAN_TO_TIER[activePlan.id]);
+    setProcessing(false);
+    setCheckoutPlan(null);
+    fireConfetti();
+    void navigate({ to: "/wardrobe", search: { welcome: true } });
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -109,7 +151,7 @@ function Pricing() {
 
         <section className="mt-12 grid gap-6 md:grid-cols-3">
           {plans.map((plan) => {
-            const isSelected = selected === plan.id;
+            const isCurrent = PLAN_TO_TIER[plan.id] === tier;
             return (
               <article
                 key={plan.id}
@@ -176,30 +218,28 @@ function Pricing() {
 
                 <button
                   type="button"
-                  onClick={() => setSelected(plan.id)}
+                  onClick={() => handleCtaClick(plan.id)}
+                  disabled={isCurrent}
                   className="pill-button mt-8 w-full"
-                  style={
-                    plan.id === "free" && !isSelected
-                      ? { opacity: 0.7 }
-                      : undefined
-                  }
+                  style={isCurrent ? { opacity: 0.6 } : undefined}
                 >
-                  {isSelected ? "Selected ✓" : plan.cta}
+                  {isCurrent ? "Huidig plan ✓" : plan.cta}
                 </button>
               </article>
             );
           })}
         </section>
 
-        {selected && selected !== "free" && (
-          <div
-            className="mx-auto mt-8 max-w-xl rounded-2xl border border-foreground/10 p-5 text-center text-sm"
-            style={{ color: "var(--color-muted-foreground)" }}
-          >
-            MIRROR is currently in early access — all plans are free while we
-            refine the experience. You'll be the first to know when paid plans
-            go live.
-          </div>
+        {activePlan && (
+          <CheckoutModal
+            open={Boolean(activePlan)}
+            tier={PLAN_TO_TIER[activePlan.id]}
+            price={activePlan.price}
+            cadence={activePlan.cadence}
+            processing={processing}
+            onClose={() => setCheckoutPlan(null)}
+            onConfirm={() => void confirmPayment()}
+          />
         )}
 
         <footer

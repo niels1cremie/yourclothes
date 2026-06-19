@@ -10,6 +10,11 @@ import {
   X,
 } from "lucide-react";
 
+import { useSubscription } from "@/context/SubscriptionContext";
+import { FREE_SCAN_LIMIT } from "@/lib/subscription";
+import { scanAndSaveFile } from "@/lib/wardrobe";
+import { PaywallModal } from "@/components/PaywallModal";
+
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
@@ -701,11 +706,39 @@ function StepWardrobe({
   s: OnboardingState;
   update: <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) => void;
 }) {
-  const onUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const urls = Array.from(files).map((f) => URL.createObjectURL(f));
-    update("wardrobePhotos", [...s.wardrobePhotos, ...urls]);
+  const { isAtLeast } = useSubscription();
+  const [scanning, setScanning] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+
+  const unlimited = isAtLeast("couture");
+  const atLimit = !unlimited && s.wardrobePhotos.length >= FREE_SCAN_LIMIT;
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const files = input.files;
+    if (!files || files.length === 0) return;
+
+    const saved: string[] = [];
+    setScanning(true);
+    try {
+      let index = s.wardrobePhotos.length;
+      for (const file of Array.from(files)) {
+        // Free tier (Atelier) caps the AI scanner at FREE_SCAN_LIMIT items.
+        if (!unlimited && index + saved.length >= FREE_SCAN_LIMIT) {
+          setPaywallOpen(true);
+          break;
+        }
+        const item = await scanAndSaveFile(file, index);
+        saved.push(item.image_url);
+        index += 1;
+      }
+    } finally {
+      setScanning(false);
+      input.value = "";
+      if (saved.length > 0) {
+        update("wardrobePhotos", [...s.wardrobePhotos, ...saved]);
+      }
+    }
   };
 
   return (
@@ -714,6 +747,19 @@ function StepWardrobe({
       <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
         AI detects category, color, fabric and formality. Correct anything later.
       </p>
+
+      {!unlimited && (
+        <p
+          className="mt-1 text-[11px]"
+          style={{
+            fontFamily: "var(--font-label)",
+            letterSpacing: "0.1em",
+            color: "var(--color-gold)",
+          }}
+        >
+          {`${Math.max(0, FREE_SCAN_LIMIT - s.wardrobePhotos.length)} VAN ${FREE_SCAN_LIMIT} GRATIS AI-SCANS OVER`}
+        </p>
+      )}
 
       <div className="mt-4 grid grid-cols-4 gap-2">
         {s.wardrobePhotos.map((url, i) => (
@@ -737,25 +783,50 @@ function StepWardrobe({
           </div>
         ))}
 
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
-          <Camera className="h-4 w-4" />
-          <span
-            className="text-[9px]"
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.15em",
-            }}
+        {atLimit ? (
+          <button
+            type="button"
+            onClick={() => setPaywallOpen(true)}
+            className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-gold bg-surface text-muted-foreground transition-colors"
           >
-            ADD
-          </span>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={onUpload}
-          />
-        </label>
+            <Sparkles className="h-4 w-4" style={{ color: "var(--color-gold)" }} />
+            <span
+              className="text-[9px]"
+              style={{
+                fontFamily: "var(--font-label)",
+                letterSpacing: "0.15em",
+                color: "var(--color-gold)",
+              }}
+            >
+              UPGRADE
+            </span>
+          </button>
+        ) : (
+          <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
+            {scanning ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-gold border-t-transparent" />
+            ) : (
+              <Camera className="h-4 w-4" />
+            )}
+            <span
+              className="text-[9px]"
+              style={{
+                fontFamily: "var(--font-label)",
+                letterSpacing: "0.15em",
+              }}
+            >
+              {scanning ? "SCAN…" : "ADD"}
+            </span>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              className="hidden"
+              disabled={scanning}
+              onChange={onUpload}
+            />
+          </label>
+        )}
       </div>
 
       <div className="mt-3 editorial-card p-3 text-[11px] leading-snug text-muted-foreground">
@@ -763,6 +834,13 @@ function StepWardrobe({
         Plain background, even light — keeps AI tags clean. No rush, you can
         keep adding inside the app.
       </div>
+
+      <PaywallModal
+        open={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        title="Je hebt je gratis limiet bereikt!"
+        message="Upgrade naar Couture voor onbeperkte AI-scans."
+      />
     </div>
   );
 }

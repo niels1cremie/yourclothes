@@ -6,12 +6,24 @@ import { nitro } from "nitro/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
+  base: "/",
   plugins: [
     tsconfigPaths(),
     tanstackStart({
       server: { entry: "server" },
     }),
-    nitro({ preset: "cloudflare-pages" }),
+    nitro({
+      preset: "cloudflare-pages",
+      cloudflare: {
+        deployConfig: true,
+        nodeCompat: true,
+        pages: {
+          routes: {
+            exclude: ["/assets/*", "/favicon.svg"],
+          },
+        },
+      },
+    }),
     react(),
     tailwindcss(),
   ],

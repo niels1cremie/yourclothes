@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,11 +16,11 @@ import { scanClothing, type ClothingItem } from "@/lib/api/clothing-scanner.func
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
     meta: [
-      { title: "Welcome to MIRROR — Set up your style" },
+      { title: "MIRROR — Stel je stijl in" },
       {
         name: "description",
         content:
-          "Tell MIRROR about your body, colors, wardrobe and goals. Seven quiet steps to your personal style DNA.",
+          "Vertel MIRROR over je lichaam, kleuren, kledingkast en doelen. Zeven rustige stappen naar je persoonlijke stijl-DNA.",
       },
     ],
   }),
@@ -88,14 +88,17 @@ const initialState: OnboardingState = {
 };
 
 const STEPS = [
-  "Welcome",
-  "About you",
-  "Measurements",
-  "Photo scan",
-  "Your wardrobe",
-  "Brands",
-  "Style goals",
+  "Welkom",
+  "Over jou",
+  "Maten",
+  "Fotoscan",
+  "Kledingkast",
+  "Merken",
+  "Stijl doelen",
 ] as const;
+
+const STORAGE_KEY = "mirror-onboarding-v1";
+const TOTAL_STEPS = STEPS.length;
 
 /* ------------------------------- helpers -------------------------------- */
 
@@ -157,9 +160,36 @@ function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [s, setS] = useState<OnboardingState>(initialState);
+  const [hydrated, setHydrated] = useState(false);
+  const [finishing, setFinishing] = useState(false);
 
-  const update = <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) =>
-    setS((prev) => ({ ...prev, [k]: v }));
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { step?: number; state?: Partial<OnboardingState> };
+        if (parsed.state) setS((prev) => ({ ...prev, ...parsed.state }));
+        if (typeof parsed.step === "number" && parsed.step >= 0 && parsed.step < TOTAL_STEPS) {
+          setStep(parsed.step);
+        }
+      }
+    } catch {
+      /* ignore corrupt storage */
+    } finally {
+      setHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, state: s }));
+  }, [step, s, hydrated]);
+
+  const update = useCallback(
+    <K extends keyof OnboardingState>(k: K, v: OnboardingState[K]) =>
+      setS((prev) => ({ ...prev, [k]: v })),
+    [],
+  );
 
   const canAdvance = useMemo(() => {
     switch (step) {
@@ -176,55 +206,47 @@ function Onboarding() {
     }
   }, [step, s]);
 
-  const next = () => {
-    if (step < STEPS.length - 1) setStep(step + 1);
-    else {
-      // For now, route to a placeholder. The main app comes next iteration.
+  const next = async () => {
+    if (!canAdvance) return;
+    if (step < TOTAL_STEPS - 1) {
+      setStep((prev) => prev + 1);
+      return;
+    }
+    setFinishing(true);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
       navigate({ to: "/" });
+    } finally {
+      setFinishing(false);
     }
   };
-  const back = () => (step > 0 ? setStep(step - 1) : navigate({ to: "/" }));
+
+  const back = () => {
+    if (step > 0) setStep((prev) => prev - 1);
+    else navigate({ to: "/" });
+  };
+
+  const progressPercent = ((step + 1) / TOTAL_STEPS) * 100;
+
+  if (!hydrated) {
+    return (
+      <main className="flex h-[100dvh] items-center justify-center bg-background">
+        <span className="btn-spinner text-foreground" aria-label="Laden" />
+      </main>
+    );
+  }
 
   return (
-    <main className="h-[100dvh] overflow-hidden bg-background">
-      <div className="mx-auto flex h-full w-full max-w-md flex-col">
-        {/* Header */}
-        <header className="flex shrink-0 items-center justify-between px-6 pt-4">
-          <button
-            onClick={back}
-            aria-label="Go back"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-secondary"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span
-            className="truncate text-[10px]"
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.25em",
-              color: "var(--color-muted-foreground)",
-            }}
-          >
-            STEP {step + 1} OF {STEPS.length} · {STEPS[step].toUpperCase()}
-          </span>
-          <span className="h-9 w-9" />
-        </header>
+    <main className="page-gradient h-[100dvh] overflow-hidden">
+      <div className="mx-auto flex h-full w-full max-w-lg flex-col px-4 sm:px-6">
+        <WizardHeader step={step} onBack={back} />
 
-        {/* Progress */}
-        <div className="mt-3 flex shrink-0 gap-1 px-6">
-          {STEPS.map((_, i) => (
-            <div
-              key={i}
-              className="h-[2px] flex-1 rounded-full transition-colors duration-500"
-              style={{
-                background: i <= step ? "var(--color-gold)" : "var(--color-border)",
-              }}
-            />
-          ))}
-        </div>
+        <WizardProgress step={step} percent={progressPercent} />
 
-        {/* Step body — fills remaining space, no page scroll */}
-        <section className="flex min-h-0 flex-1 flex-col px-6 pt-4">
+        <section
+          key={step}
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-5 pb-2 animate-in fade-in duration-300"
+        >
           {step === 0 && <StepWelcome />}
           {step === 1 && <StepBasics s={s} update={update} />}
           {step === 2 && <StepMeasurements s={s} update={update} />}
@@ -234,44 +256,166 @@ function Onboarding() {
           {step === 6 && <StepGoals s={s} update={update} />}
         </section>
 
-        {/* Footer CTA */}
-        <div className="shrink-0 px-6 pb-5 pt-3">
-          <button onClick={next} disabled={!canAdvance} className="pill-button w-full">
-            {step === STEPS.length - 1 ? "Enter MIRROR" : "Continue"}
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
+        <WizardFooter
+          step={step}
+          canAdvance={canAdvance}
+          loading={finishing}
+          onBack={back}
+          onNext={next}
+        />
       </div>
     </main>
+  );
+}
+
+function WizardHeader({ step, onBack }: { step: number; onBack: () => void }) {
+  return (
+    <header className="flex shrink-0 items-center justify-between pt-4 sm:pt-5">
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label={step === 0 ? "Terug naar home" : "Vorige stap"}
+        className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-surface text-foreground transition-all hover:border-gold/40 hover:bg-secondary active:scale-95"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+      <div className="text-center">
+        <p
+          className="text-[10px] text-muted-foreground"
+          style={{ fontFamily: "var(--font-label)", letterSpacing: "0.22em" }}
+        >
+          STAP {step + 1} VAN {TOTAL_STEPS}
+        </p>
+        <p
+          className="mt-0.5 text-xs text-foreground"
+          style={{ fontFamily: "var(--font-label)", letterSpacing: "0.12em" }}
+        >
+          {STEPS[step]}
+        </p>
+      </div>
+      <span className="h-10 w-10" aria-hidden />
+    </header>
+  );
+}
+
+function WizardProgress({ step, percent }: { step: number; percent: number }) {
+  return (
+    <div className="mt-4 shrink-0 sm:mt-5">
+      <div className="wizard-progress-track">
+        <div className="wizard-progress-fill" style={{ width: `${percent}%` }} />
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex gap-1.5">
+          {STEPS.map((_, i) => (
+            <span
+              key={i}
+              className="wizard-step-dot"
+              data-active={i === step}
+              data-done={i < step}
+              aria-hidden
+            />
+          ))}
+        </div>
+        <span className="text-[10px] tabular-nums text-muted-foreground">
+          {Math.round(percent)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function WizardFooter({
+  step,
+  canAdvance,
+  loading,
+  onBack,
+  onNext,
+}: {
+  step: number;
+  canAdvance: boolean;
+  loading: boolean;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const isLast = step === TOTAL_STEPS - 1;
+
+  return (
+    <div className="safe-bottom shrink-0 border-t border-border/60 bg-background/80 py-4 backdrop-blur-sm">
+      <div className="flex gap-3">
+        {step > 0 ? (
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={loading}
+            className="pill-ghost min-h-12 flex-1 sm:flex-none sm:px-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Vorige
+          </button>
+        ) : (
+          <div className="hidden sm:block sm:w-[7.5rem]" aria-hidden />
+        )}
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!canAdvance || loading}
+          data-loading={loading}
+          className="pill-button min-h-12 flex-1 sm:min-w-[10rem]"
+        >
+          {loading ? (
+            <>
+              <span className="btn-spinner" />
+              Even geduld…
+            </>
+          ) : isLast ? (
+            <>
+              Start MIRROR
+              <Sparkles className="h-4 w-4" />
+            </>
+          ) : (
+            <>
+              Volgende
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </button>
+      </div>
+      {!canAdvance && step > 0 && (
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          Vul de verplichte velden in om verder te gaan.
+        </p>
+      )}
+    </div>
   );
 }
 
 /* =============================== STEPS ================================== */
 
 function StepWelcome() {
+  const previewSteps = [
+    { n: "01", t: "Over jou", d: "Naam, stijl & merken." },
+    { n: "02", t: "Maten", d: "Lengte, vorm & pasvorm." },
+    { n: "03", t: "Fotoscan", d: "AI analyseert je stijl-DNA." },
+    { n: "04", t: "Kledingkast", d: "Upload je favoriete items." },
+    { n: "05", t: "Merken", d: "Koppel je aankopen." },
+    { n: "06", t: "Doelen", d: "Budget & gelegenheden." },
+    { n: "07", t: "Klaar", d: "Start met MIRROR." },
+  ];
+
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="A new beginning" title="Build your digital wardrobe." />
-      <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-        Seven short steps. We'll learn your body, colors and closet — then plan outfits around your
-        week.
+      <SectionTitle eyebrow="Een nieuw begin" title="Bouw je digitale kledingkast." />
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+        Zeven korte stappen. We leren je lichaam, kleuren en kast kennen — en plannen outfits rondom
+        je echte week.
       </p>
 
-      <div className="mt-5 grid flex-1 grid-cols-2 gap-2 content-start">
-        {[
-          { n: "01", t: "You", d: "Name & style tags." },
-          { n: "02", t: "Body", d: "Measurements & scan." },
-          { n: "03", t: "Wardrobe", d: "AI-tagged pieces." },
-          { n: "04", t: "World", d: "Brands & goals." },
-        ].map((row) => (
-          <div key={row.n} className="editorial-card flex flex-col gap-1 px-4 py-3">
+      <div className="mt-6 grid flex-1 grid-cols-2 gap-2.5 content-start sm:gap-3">
+        {previewSteps.map((row) => (
+          <div key={row.n} className="editorial-card flex flex-col gap-1 px-4 py-3.5 transition-colors hover:border-gold/30">
             <span
-              className="text-[10px]"
-              style={{
-                fontFamily: "var(--font-label)",
-                letterSpacing: "0.2em",
-                color: "var(--color-gold)",
-              }}
+              className="text-[10px] text-gold"
+              style={{ fontFamily: "var(--font-label)", letterSpacing: "0.2em" }}
             >
               {row.n}
             </span>
@@ -417,7 +561,7 @@ function StepBasics({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="About you" title="Start with the basics." />
+      <SectionTitle eyebrow="Over jou" title="Begin met de basis." />
 
       <div className="mt-4 space-y-4 overflow-y-auto pr-2">
         <div className="grid grid-cols-2 gap-2">
@@ -540,7 +684,7 @@ function StepMeasurements({
 }) {
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="Measurements" title="A few proportions for fit." />
+      <SectionTitle eyebrow="Maten" title="Een paar verhoudingen voor de pasvorm." />
 
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="inline-flex rounded-full border border-border bg-surface p-1">
@@ -692,9 +836,9 @@ function StepScan({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="Photo scan" title="Two photos. AI does the rest." />
-      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-        Analyzed for body shape, face shape, undertone & color season.
+      <SectionTitle eyebrow="Fotoscan" title="Twee foto's. AI doet de rest." />
+      <p className="mt-2 text-sm leading-snug text-muted-foreground">
+        Geanalyseerd op lichaamsvorm, gezichtsvorm, ondertoon en kleurseizoen.
       </p>
 
       <div className="mt-4 space-y-2">
@@ -721,20 +865,21 @@ function StepScan({
       </div>
 
       <button
+        type="button"
         onClick={runScan}
         disabled={!s.fullBodyPhoto || !s.facePhoto || scanning}
-        className="pill-ghost mt-4 w-full"
-        style={{ borderColor: "var(--color-gold)", color: "var(--color-ink)" }}
+        data-loading={scanning}
+        className="pill-ghost mt-4 w-full border-gold/50 text-ink"
       >
         {scanning ? (
           <>
-            <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-gold" />
-            Analyzing your style DNA…
+            <span className="btn-spinner" />
+            Je stijl-DNA analyseren…
           </>
         ) : (
           <>
             <Sparkles className="h-4 w-4" />
-            Run AI Analysis
+            Start AI-analyse
           </>
         )}
       </button>
@@ -772,7 +917,7 @@ function PhotoSlot({
             <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
           ) : isLoading ? (
             <div className="flex h-full w-full items-center justify-center">
-              <span className="inline-block h-3 w-3 animate-pulse rounded-full bg-gold" />
+              <span className="btn-spinner text-gold" />
             </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -1021,12 +1166,12 @@ function StepWardrobe({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="Your wardrobe" title="Add five favorite pieces." />
-      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-        AI detects category, color, fabric and formality. Correct anything later.
+      <SectionTitle eyebrow="Je kledingkast" title="Voeg vijf favoriete items toe." />
+      <p className="mt-2 text-sm leading-snug text-muted-foreground">
+        AI herkent categorie, kleur, stof en formaliteit. Corrigeer later wat je wilt.
       </p>
 
-      <div className="mt-4 grid grid-cols-4 gap-4">
+      <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4">
         {s.wardrobePhotos.map((url, i) => (
           <div key={i} className="flex flex-col">
             {/* Photo with remove button */}
@@ -1081,16 +1226,13 @@ function StepWardrobe({
         ))}
 
         {/* Upload button */}
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-border bg-surface text-muted-foreground transition-colors hover:border-gold">
+        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-all hover:border-gold hover:bg-secondary/50 active:scale-[0.98]">
           <Camera className="h-4 w-4" />
           <span
             className="text-[9px]"
-            style={{
-              fontFamily: "var(--font-label)",
-              letterSpacing: "0.15em",
-            }}
+            style={{ fontFamily: "var(--font-label)", letterSpacing: "0.15em" }}
           >
-            ADD
+            TOEVOEGEN
           </span>
           <input type="file" multiple accept="image/*" className="hidden" onChange={onUpload} />
         </label>
@@ -1133,9 +1275,10 @@ function StepBrands({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="Brands" title="Pull your purchase history." />
-      <p className="mt-2 text-[12px] leading-snug text-muted-foreground">
-        Past orders auto-import with AI tags. Connect more later in Settings.
+      <SectionTitle eyebrow="Merken" title="Haal je aankoopgeschiedenis op." />
+      <p className="mt-2 text-sm leading-snug text-muted-foreground">
+        Eerdere bestellingen worden automatisch geïmporteerd met AI-tags. Koppel later meer in
+        Instellingen.
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1199,7 +1342,7 @@ function StepGoals({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle eyebrow="Style goals" title="What should MIRROR optimize?" />
+      <SectionTitle eyebrow="Stijl doelen" title="Waar moet MIRROR op optimaliseren?" />
 
       <FieldGroup label="Occasions" className="mt-3">
         <div className="flex flex-wrap gap-1.5">

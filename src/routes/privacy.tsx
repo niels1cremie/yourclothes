@@ -18,7 +18,17 @@ export const Route = createFileRoute("/privacy")({
         Service you agree to the practices described here.
       </p>
 
-      <h2>1. Information we collect</h2>
+      <div
+        className="not-prose my-4 rounded-xl border border-foreground/15 p-4 text-sm"
+        style={{ color: "var(--color-muted-foreground)" }}
+      >
+        <strong>Test / early-access notice.</strong> MIRROR is currently in
+        early access. The pricing plans shown on the <a href="/pricing">Pricing</a>{" "}
+        page are displayed for testing only — no payments are processed and no
+        billing data is collected at this time. When paid plans go live, this
+        policy will be updated and you will be notified in-product before any
+        charge.
+      </div>
       <ul>
         <li><strong>Account information</strong> — name, email, and authentication identifiers you provide.</li>
         <li><strong>Wardrobe content</strong> — photos of garments, tags, and outfit data you upload.</li>

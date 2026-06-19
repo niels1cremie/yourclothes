@@ -4,7 +4,7 @@ import heroImage from "@/assets/welcome-hero.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MIRROR — Your Digital Wardrobe" },
+      { title: "MIRROR | Jouw Digitale Kledingkast" },
       {
         name: "description",
         content:

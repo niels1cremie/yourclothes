@@ -79,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#F7F5F2" },
-      { title: "MIRROR — Your Digital Wardrobe" },
+      { title: "MIRROR | Jouw Digitale Kledingkast" },
       { name: "description", content: "An AI-powered personal stylist. Build your digital wardrobe, plan outfits, and discover your style DNA." },
       { property: "og:title", content: "MIRROR — Your Digital Wardrobe" },
       { property: "og:description", content: "An AI-powered personal stylist. Build your digital wardrobe, plan outfits, and discover your style DNA." },
@@ -91,6 +91,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6312503c-86e3-4bbb-bb9f-619d668b829b/id-preview-6be76a73--1e0f9fa5-a75d-43fb-adbb-e429f4181b5e.lovable.app-1781471283646.png" },
     ],
     links: [
+      {
+        rel: "icon",
+        href: "data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%20100%20100%22%3E%3Ctext%20y=%22.9em%22%20font-size=%2290%22%3E\uD83E\uDE9E%3C/text%3E%3C/svg%3E",
+      },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

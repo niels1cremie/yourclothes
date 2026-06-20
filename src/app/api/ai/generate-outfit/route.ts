@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Groq from 'groq-sdk'
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || '',
+})
 
 export async function POST(request: NextRequest) {
   try {
     const { occasion, mood, wardrobeItems, styleDNA } = await request.json()
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2500))
-
-    // Mock AI outfit generation
-    // In production, this would use the user's wardrobe and style DNA to generate recommendations
     if (!wardrobeItems || wardrobeItems.length < 3) {
       return NextResponse.json({
         items: [],
@@ -16,22 +16,45 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Select random items from wardrobe (in production, this would be intelligent selection)
-    const selectedItems = wardrobeItems
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-      .map((item: any) => item.id)
+    // Use Groq AI for outfit generation
+    const wardrobeSummary = wardrobeItems.map((item: any) => 
+      `${item.category || 'item'} in ${item.color?.join(', ') || 'various colors'}`
+    ).join(', ')
 
-    const bodyShape = styleDNA?.body_shape || 'body type'
-    const colorSeason = styleDNA?.color_season || 'color season'
-    const undertone = styleDNA?.undertone || 'neutral'
+    const prompt = `Generate an outfit recommendation for a ${occasion} occasion with a ${mood} mood.
 
-    const mockResponse = {
-      items: selectedItems,
-      reason: `This ${occasion.toLowerCase()} outfit is designed to complement your ${bodyShape.toLowerCase()} figure. The ${colorSeason.toLowerCase()} color palette enhances your ${undertone.toLowerCase()} undertones, while the ${mood.toLowerCase()} mood is achieved through the carefully selected pieces. This combination balances comfort and elegance for the occasion.`
-    }
+Available wardrobe items: ${wardrobeSummary}
 
-    return NextResponse.json(mockResponse)
+User's style profile:
+- Body shape: ${styleDNA?.body_shape || 'unknown'}
+- Color season: ${styleDNA?.color_season || 'unknown'}
+- Undertone: ${styleDNA?.undertone || 'unknown'}
+
+Select 3 items from the wardrobe that work well together. Provide a JSON response with:
+- items: array of 3 item IDs from the provided wardrobe
+- reason: brief explanation of why this outfit works for the occasion and the user's style
+
+Available item IDs: ${wardrobeItems.map((item: any) => item.id).join(', ')}`
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert fashion stylist AI. Create outfit recommendations that complement the user\'s body type, color season, and personal style.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama3-70b-8192',
+      temperature: 0.7,
+      response_format: { type: 'json_object' },
+    })
+
+    const response = JSON.parse(completion.choices[0]?.message?.content || '{}')
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('AI outfit generation error:', error)
     return NextResponse.json(

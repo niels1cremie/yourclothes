@@ -1,37 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Groq from 'groq-sdk'
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || '',
+})
 
 export async function POST(request: NextRequest) {
   try {
     const { photo } = await request.json()
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Use Groq AI for clothing classification and tagging
+    const prompt = `Analyze this clothing item and provide detailed fashion tags. 
 
-    // Mock AI cutout and tagging results
-    // In production, this would call AI for cutout and classification
-    const categories = ['Top', 'Bottom', 'Dress', 'Outerwear', 'Shoes', 'Accessory']
-    const colors = ['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Brown', 'Gray', 'Pink', 'Purple', 'Navy', 'Beige']
-    const fabrics = ['Cotton', 'Silk', 'Wool', 'Denim', 'Polyester', 'Linen', 'Leather', 'Cashmere']
-    const styles = ['Casual', 'Formal', 'Business', 'Sport', 'Bohemian', 'Minimalist', 'Classic']
-    const seasons = ['Spring', 'Summer', 'Fall', 'Winter']
-    const formalities = ['Casual', 'Business Casual', 'Formal', 'Semi-Formal']
+Categories to choose from: Top, Bottom, Dress, Outerwear, Shoes, Accessory
+Colors: Black, White, Red, Blue, Green, Yellow, Brown, Gray, Pink, Purple, Navy, Beige, Orange, Teal, Burgundy
+Fabrics: Cotton, Silk, Wool, Denim, Polyester, Linen, Leather, Cashmere, Velvet, Satin
+Styles: Casual, Formal, Business, Sport, Bohemian, Minimalist, Classic, Edgy, Romantic
+Seasons: Spring, Summer, Fall, Winter
+Formality levels: Casual, Business Casual, Formal, Semi-Formal
 
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)]
-    const randomColors = [
-      colors[Math.floor(Math.random() * colors.length)],
-      colors[Math.floor(Math.random() * colors.length)]
-    ].filter((value, index, self) => self.indexOf(value) === index) // Remove duplicates
+Provide a JSON response with these fields:
+- category: single category from the list
+- color: array of 1-2 dominant colors
+- fabric: single fabric type
+- style: single style descriptor
+- season: array of 1-2 suitable seasons
+- formality: single formality level`
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert fashion analyst AI. Analyze clothing items and provide accurate fashion tags for wardrobe organization and styling.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama3-70b-8192',
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+    })
+
+    const response = JSON.parse(completion.choices[0]?.message?.content || '{}')
 
     const mockResponse = {
-      cutoutImage: photo, // In production, this would be the actual cutout image
-      tags: {
-        category: randomCategory,
-        color: randomColors,
-        fabric: fabrics[Math.floor(Math.random() * fabrics.length)],
-        style: styles[Math.floor(Math.random() * styles.length)],
-        season: [seasons[Math.floor(Math.random() * seasons.length)]],
-        formality: formalities[Math.floor(Math.random() * formalities.length)]
-      }
+      cutoutImage: photo, // Note: Actual cutout would require image processing API
+      tags: response
     }
 
     return NextResponse.json(mockResponse)

@@ -1,35 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Groq from 'groq-sdk'
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || '',
+})
 
 export async function POST(request: NextRequest) {
   try {
     const { bodyPhoto, facePhoto } = await request.json()
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Use Groq AI for body and face analysis
+    const prompt = `Analyze the provided body and face photos to determine:
+1. Body shape (Hourglass, Pear, Apple, Rectangle, Inverted Triangle)
+2. Face shape (Oval, Round, Square, Heart, Oblong)
+3. Skin undertone (Warm, Cool, Neutral)
+4. Color season (Spring, Summer, Autumn, Winter)
+5. Shoulder-to-hip ratio (estimate as decimal between 0.6-0.9)
+6. Torso length (Short, Average, Long)
 
-    // Mock AI analysis results
-    // In production, this would call Lovable AI Vision API
-    const bodyShapes = ['Hourglass', 'Pear', 'Apple', 'Rectangle', 'Inverted Triangle']
-    const faceShapes = ['Oval', 'Round', 'Square', 'Heart', 'Oblong']
-    const undertones = ['Warm', 'Cool', 'Neutral']
-    const colorSeasons = ['Spring', 'Summer', 'Autumn', 'Winter']
-    
-    const randomBodyShape = bodyShapes[Math.floor(Math.random() * bodyShapes.length)]
-    const randomFaceShape = faceShapes[Math.floor(Math.random() * faceShapes.length)]
-    const randomUndertone = undertones[Math.floor(Math.random() * undertones.length)]
-    const randomColorSeason = colorSeasons[Math.floor(Math.random() * colorSeasons.length)]
+Provide a JSON response with these fields: body_shape, shoulder_hip_ratio, torso_length, face_shape, undertone, color_season, summary (a brief personalized description).`
 
-    const mockResponse = {
-      body_shape: randomBodyShape,
-      shoulder_hip_ratio: 0.7 + Math.random() * 0.2,
-      torso_length: ['Short', 'Average', 'Long'][Math.floor(Math.random() * 3)],
-      face_shape: randomFaceShape,
-      undertone: randomUndertone,
-      color_season: randomColorSeason,
-      summary: `You have a ${randomBodyShape.toLowerCase()} figure with a ${randomFaceShape.toLowerCase()} face shape. Your ${randomUndertone.toLowerCase()} undertones mean ${randomColorSeason.toLowerCase()} colors like ${getColorRecommendations(randomColorSeason)} will complement your complexion best.`
-    }
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert fashion stylist and body analysis AI. Provide accurate, helpful fashion and style advice based on physical characteristics.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      model: 'llama3-70b-8192',
+      temperature: 0.5,
+      response_format: { type: 'json_object' },
+    })
 
-    return NextResponse.json(mockResponse)
+    const response = JSON.parse(completion.choices[0]?.message?.content || '{}')
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('AI analysis error:', error)
     return NextResponse.json(
@@ -37,14 +46,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-function getColorRecommendations(season: string): string {
-  const recommendations = {
-    Spring: 'coral, peach, light green, and ivory',
-    Summer: 'lavender, rose, soft blue, and gray',
-    Autumn: 'terracotta, olive, mustard, and warm brown',
-    Winter: 'crimson, emerald, navy, and black'
-  }
-  return recommendations[season as keyof typeof recommendations] || 'neutral tones'
 }

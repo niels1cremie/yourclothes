@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import coil3.ImageLoader
 import coil3.compose.LocalImageLoader
 import com.yourclothes.app.data.*
+import com.yourclothes.app.ui.auth.AuthScreen
 import com.yourclothes.app.ui.onboarding.OnboardingScreen
 import com.yourclothes.app.ui.planner.PlannerScreen
 import com.yourclothes.app.ui.planner.PlannerViewModel
@@ -53,7 +54,7 @@ class MainActivity : ComponentActivity() {
             .build()
 
         // Create Coil ImageLoader with original quality configuration
-        val imageLoader = CoilConfig.createImageLoader(coilOkHttpClient)
+        val imageLoader = CoilConfig.createImageLoader(this, coilOkHttpClient)
 
         val wardrobeViewModel = WardrobeViewModel(wardrobeRepository, authRepository, aiRepository)
         val plannerViewModel = PlannerViewModel(plannerRepository, authRepository)
@@ -156,13 +157,18 @@ class MainActivity : ComponentActivity() {
             ) {
                 // Provide the configured ImageLoader to the composition
                 CompositionLocalProvider(LocalImageLoader provides imageLoader) {
-                    val user = authRepository.getCurrentUser()
+                    var currentUser by remember { mutableStateOf(authRepository.getCurrentUser()) }
                     var showOnboarding by remember { mutableStateOf(true) } // Default to true until we check
                     var isAIProcessing by remember { mutableStateOf(false) }
                     var isLoadingProfile by remember { mutableStateOf(true) }
 
-                    LaunchedEffect(user) {
+                    LaunchedEffect(currentUser) {
+                        val user = currentUser
                         if (user != null) {
+                            // Reload data for the new user
+                            wardrobeViewModel.loadItems()
+                            plannerViewModel.selectDate(java.time.LocalDate.now())
+
                             isLoadingProfile = true
                             try {
                                 val profile = profileRepository.getProfile(user.id)
@@ -190,7 +196,14 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    if (isLoadingProfile) {
+                    if (currentUser == null) {
+                        AuthScreen(
+                            authRepository = authRepository,
+                            onAuthSuccess = {
+                                currentUser = authRepository.getCurrentUser()
+                            }
+                        )
+                    } else if (isLoadingProfile) {
                         // Loading profile state
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
                             Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
@@ -208,8 +221,9 @@ class MainActivity : ComponentActivity() {
                                 Text("MIRROR AI stelt je digitale profiel samen...")
                             }
                         }
-                    } else if (showOnboarding && user != null) {
+                    } else if (showOnboarding) {
                         // Show onboarding
+                        val user = currentUser!!
                         OnboardingScreen { first, last, dob, photoUri ->
                             lifecycleScope.launch {
                                 isAIProcessing = true
@@ -283,20 +297,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                    } else if (user == null) {
-                        // User not logged in - show auth screen or login
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                                Text("Niet ingelogd")
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(onClick = {
-                                    // Trigger sign in (implementation depends on your auth flow)
-                                    Log.d("MainActivity", "Sign in triggered")
-                                }) {
-                                    Text("Inloggen")
-                                }
-                            }
-                        }
                     } else {
                         // User logged in and onboarding completed - show main app
                         MainContainer(wardrobeViewModel, plannerViewModel, settingsViewModel)
@@ -305,7 +305,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    }
+}
 
 @Composable
 fun MainContainer(

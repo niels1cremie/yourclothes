@@ -1,16 +1,14 @@
 package com.yourclothes.app.ui.wardrobe
 
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Droplets
-import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,49 +18,49 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.size.Scale
 import coil3.size.Size
 import com.yourclothes.app.data.WardrobeItem
 
 @Composable
-fun WardrobeScreen(viewModel: WardrobeViewModel) {
+fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
-    
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri ->
-            if (uri != null) {
-                viewModel.uploadAndAnalyze(uri, context)
-            }
-        }
-    )
+    var isGridView by remember { mutableStateOf(true) }
+    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
+        topBar = {
+            Column {
+                TopAppBar(
+                    title = { Text("Mijn Kledingkast") },
+                    actions = {
+                        IconButton(onClick = { isGridView = !isGridView }) {
+                            Icon(if (isGridView) Icons.Default.ViewList else Icons.Default.GridView, null)
+                        }
+                    }
+                )
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = {},
+                    active = false,
+                    onActiveChange = {},
+                    placeholder = { Text("Zoek kleding...") },
+                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {}
+                
+                FilterChips()
+            }
+        },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    photoPickerLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(Icons.Default.AddAPhoto, contentDescription = "Toevoegen")
+            FloatingActionButton(onClick = onNavigateToScanner) {
+                Icon(Icons.Default.Add, "Toevoegen")
             }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
-            Text(
-                "Mijn Kledingkast",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (val s = state) {
                 is WardrobeState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -73,36 +71,57 @@ fun WardrobeScreen(viewModel: WardrobeViewModel) {
                     Text(s.message, color = MaterialTheme.colorScheme.error)
                 }
                 is WardrobeState.Success -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Show categorized items
-                        s.categorizedItems.forEach { (category, items) ->
-                            item {
-                                Text(
-                                    category.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(vertical = 8.dp)
-                                )
+                    val filteredItems = if (searchQuery.isBlank()) {
+                        s.items
+                    } else {
+                        s.items.filter { 
+                            it.category.contains(searchQuery, ignoreCase = true) || 
+                            it.color?.contains(searchQuery, ignoreCase = true) == true 
+                        }
+                    }
+
+                    if (isGridView) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(2),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(filteredItems) { item ->
+                                WardrobeItemCard(item)
                             }
-                            item {
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.heightIn(max = 800.dp)
-                                ) {
-                                    items(items) { item ->
-                                        WardrobeItemCard(item)
-                                    }
-                                }
+                        }
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(filteredItems) { item ->
+                                WardrobeListItem(item)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun FilterChips() {
+    val filters = listOf("Alle", "Top", "Broeken", "Schoenen", "Jassen")
+    var selectedFilter by remember { mutableStateOf("Alle") }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        filters.forEach { filter ->
+            FilterChip(
+                selected = selectedFilter == filter,
+                onClick = { selectedFilter = filter },
+                label = { Text(filter) }
+            )
         }
     }
 }
@@ -145,17 +164,34 @@ fun WardrobeItemCard(item: WardrobeItem) {
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
-                    Text(
-                        item.category,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        item.style ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1
-                    )
+                    Text(item.category, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Text(item.style ?: "", style = MaterialTheme.typography.bodySmall, maxLines = 1)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun WardrobeListItem(item: WardrobeItem) {
+    Card(
+        modifier = Modifier.fillMaxWidth().height(80.dp),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AsyncImage(
+                model = item.image_url,
+                contentDescription = null,
+                modifier = Modifier.size(80.dp),
+                contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.category, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(item.color ?: "Kleurloos", style = MaterialTheme.typography.bodyMedium)
+            }
+            IconButton(onClick = {}) {
+                Icon(Icons.Default.MoreVert, null)
             }
         }
     }

@@ -37,6 +37,20 @@ data class ClothingAnalysisResponse(
     val fabric: String
 )
 
+@Serializable
+data class OutfitGenerationRequest(
+    val items: List<WardrobeItem>,
+    val occasion: String,
+    val weather: Map<String, String>? = null,
+    val profile: UserProfile? = null
+)
+
+@Serializable
+data class OutfitGenerationResponse(
+    val selected_item_ids: List<String>,
+    val reasoning: String
+)
+
 class AIRepository {
     private val client = SupabaseClient.client
 
@@ -60,6 +74,19 @@ class AIRepository {
                 body = request
             )
             val result = Json.decodeFromString<ClothingAnalysisResponse>(response.bodyAsText())
+            Result.success(result)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun generateOutfit(request: OutfitGenerationRequest): Result<OutfitGenerationResponse> = withContext(Dispatchers.IO) {
+        try {
+            val response = client.functions.invoke(
+                function = "outfit-generator",
+                body = request
+            )
+            val result = Json.decodeFromString<OutfitGenerationResponse>(response.bodyAsText())
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Camera, Search } from "lucide-react";
+import { Camera, Search, Droplets } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { scanClothing, type ClothingItem } from "@/lib/api/clothing-scanner.functions";
+import { scanClothing } from "@/lib/api/clothing-scanner.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/wardrobe")({
   head: () => ({
@@ -25,99 +26,91 @@ const CATEGORY_LABELS: Record<CategoryKey, string> = {
 };
 
 function Wardrobe() {
-  const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [scanMap, setScanMap] = useState<Map<string, ClothingItem[]>>(new Map());
+  const [wardrobeItems, setWardrobeItems] = useState<any[]>([]);
   const [scanErrors, setScanErrors] = useState<Map<string, string>>(new Map());
   const [activeTab, setActiveTab] = useState<CategoryKey | "all">("all");
 
-  useEffect(() => {
-    loadPhotos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadPhotos = async () => {
+  const fetchItems = async () => {
     setLoading(true);
-    try {
-      const { data, error } = await supabase.storage.from("wardrobe-photos").list("", { limit: 100 });
-      if (error) {
-        console.error("Failed to list wardrobe photos:", error);
-        setPhotos([]);
-      } else if (data) {
-        const urls = data
-          .filter((f: any) => f && f.name)
-          .map((f: any) => {
-            const { data: urlData } = supabase.storage.from("wardrobe-photos").getPublicUrl(f.name);
-            return urlData?.publicUrl ?? "";
-          })
-          .filter(Boolean);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from("wardrobe_items")
+        .select("*")
+        .eq("user_id", user.id)
+        .order('created_at', { ascending: false });
 
-        setPhotos(urls);
-
-        // Kick off scans for any unscanned photos
-        for (const u of urls) {
-          if (!scanMap.has(u) && !scanErrors.has(u)) {
-            triggerScan(u);
-          }
-        }
+      if (!error) {
+        setWardrobeItems(data || []);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
-  const triggerScan = async (imageUrl: string) => {
-    setScanErrors((prev) => new Map(prev).set(imageUrl, "Scanning…"));
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const triggerScan = async (id: string, imageUrl: string) => {
+    setScanErrors((prev) => new Map(prev).set(id, "Scanning…"));
     try {
       const res = await scanClothing({ data: { imageUrl } });
       if (res.error) {
-        setScanErrors((prev) => new Map(prev).set(imageUrl, res.error!));
-      } else if (res.items) {
-        setScanMap((prev) => new Map(prev).set(imageUrl, res.items!));
-        setScanErrors((prev) => {
-          const next = new Map(prev);
-          next.delete(imageUrl);
-          return next;
-        });
+        setScanErrors((prev) => new Map(prev).set(id, res.error!));
+      } else if (res.items && res.items.length > 0) {
+        const item = res.items[0];
+        // Persist scan result to DB
+        const { error: updateError } = await supabase
+          .from("wardrobe_items")
+          .update({
+            category: item.category,
+            style: item.style,
+            color: item.color,
+            fabric: item.fabric
+          })
+          .eq("id", id);
+
+        if (!updateError) {
+          setWardrobeItems(prev => prev.map(i => i.id === id ? { ...i, ...item } : i));
+          setScanErrors((prev) => {
+            const next = new Map(prev);
+            next.delete(id);
+            return next;
+          });
+          toast.success("Kledingstuk succesvol geanalyseerd!");
+        }
       }
     } catch (err) {
       console.error(err);
-      setScanErrors((prev) => new Map(prev).set(imageUrl, "Fout bij scannen"));
+      setScanErrors((prev) => new Map(prev).set(id, "Fout bij scannen"));
     }
   };
 
-  const itemsByCategory = useMemo(() => {
-    const map: Record<string, { image: string; items: ClothingItem[] }[]> = {};
-    for (const url of photos) {
-      const items = scanMap.get(url) ?? [];
-      if (items.length === 0) {
-        (map.other ??= []).push({ image: url, items: [] });
-      } else {
-        for (const it of items) {
-          const cat: CategoryKey = (it.category as CategoryKey) ?? "other";
-          (map[cat] ??= []).push({ image: url, items: [it] });
-        }
-      }
-    }
-    return map;
-  }, [photos, scanMap]);
+  const toggleLaundry = async (id: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'clean' ? 'dirty' : 'clean';
+    const { error } = await supabase
+      .from("wardrobe_items")
+      .update({ laundry_status: nextStatus })
+      .eq("id", id);
 
-  const tabs: (CategoryKey | "all")[] = ["all", "top", "bottom", "shoes", "accessories", "other"];
+    if (!error) {
+      setWardrobeItems(prev => prev.map(item => item.id === id ? { ...item, laundry_status: nextStatus } : item));
+      toast.success(nextStatus === 'dirty' ? "Item in de wasmand" : "Item is weer schoon");
+    }
+  };
 
   const filteredList = useMemo(() => {
-    if (activeTab === "all") {
-      return photos.map((p) => ({ image: p, items: scanMap.get(p) ?? [] }));
-    }
-    // flatten entries for activeTab
-    const list: { image: string; items: ClothingItem[] }[] = [];
-    for (const url of photos) {
-      const items = (scanMap.get(url) ?? []).filter((it) => (it.category ?? "other") === activeTab);
-      if (items.length > 0) list.push({ image: url, items });
-    }
-    return list;
-  }, [photos, scanMap, activeTab]);
+    if (activeTab === "all") return wardrobeItems;
+    return wardrobeItems.filter(item => {
+      const cat = (item.category || "other").toLowerCase();
+      if (activeTab === "top") return ["top", "outerwear", "shirt", "sweater", "dress"].includes(cat);
+      if (activeTab === "bottom") return ["bottom", "pants", "skirt", "jeans"].includes(cat);
+      return cat === activeTab;
+    });
+  }, [wardrobeItems, activeTab]);
+
+  const tabs: (CategoryKey | "all")[] = ["all", "top", "bottom", "shoes", "accessories", "other"];
 
   return (
     <main className="min-h-screen bg-background">
@@ -131,12 +124,12 @@ function Wardrobe() {
           </Link>
         </header>
 
-        <nav className="mt-6 flex gap-3">
+        <nav className="mt-6 flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           {tabs.map((t) => (
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              className={`px-3 py-1 rounded-full text-sm ${activeTab === t ? "bg-gold text-ink" : "bg-surface text-muted-foreground"}`}
+              className={`px-4 py-1.5 rounded-full text-sm transition-colors ${activeTab === t ? "bg-ink text-white" : "bg-surface text-muted-foreground border border-border"}`}
             >
               {t === "all" ? "Alles" : CATEGORY_LABELS[t as CategoryKey]}
             </button>
@@ -147,42 +140,55 @@ function Wardrobe() {
           {loading && <p>Bezig met laden…</p>}
 
           {!loading && filteredList.length === 0 && (
-            <div className="editorial-card p-6 text-center">
-              <p className="mb-3">Geen items gevonden in deze categorie.</p>
+            <div className="editorial-card p-12 text-center col-span-full border-dashed border-2">
+              <p className="mb-4 text-muted-foreground">Geen items gevonden in deze categorie.</p>
               <Link to="/onboarding" className="pill-button inline-flex items-center gap-2">
                 <Camera className="h-4 w-4" /> Scan een nieuw kledingstuk
               </Link>
             </div>
           )}
 
-          {filteredList.map(({ image, items }) => (
-            <article key={image} className="rounded-2xl border border-border bg-surface p-3">
-              <div className="relative mb-3 overflow-hidden rounded-lg">
-                <img src={image} alt="" className="h-56 w-full object-cover" />
+          {filteredList.map((item) => (
+            <article key={item.id} className="rounded-2xl border border-border bg-surface p-3 transition-transform hover:scale-[1.02]">
+              <div className="relative mb-3 overflow-hidden rounded-lg aspect-[3/4]">
+                <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                <button
+                  onClick={() => toggleLaundry(item.id, item.laundry_status)}
+                  title={item.laundry_status === 'dirty' ? "Markeer als schoon" : "Markeer als vies"}
+                  className={`absolute top-2 right-2 p-2 rounded-full backdrop-blur-md transition-colors shadow-sm ${item.laundry_status === 'dirty' ? 'bg-red-500 text-white' : 'bg-white/80 text-ink'}`}
+                >
+                  <Droplets className="h-4 w-4" />
+                </button>
               </div>
 
-              {scanErrors.has(image) && (
-                <p className="mb-2 text-sm text-red-600">{scanErrors.get(image)}</p>
+              <div className="space-y-1 px-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold capitalize tracking-tight">{item.category || 'Nieuw item'}</p>
+                  {item.laundry_status === 'dirty' && (
+                    <span className="text-[9px] font-bold text-red-500 uppercase tracking-tighter">In de was</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-muted-foreground leading-snug">{item.style || 'Scan voor details'}</p>
+                <div className="flex gap-2 text-[11px] text-muted-foreground">
+                  <span className="capitalize">{item.color}</span>
+                  {item.fabric && <span>• {item.fabric}</span>}
+                </div>
+              </div>
+
+              {scanErrors.has(item.id) && (
+                <p className="mt-2 text-xs text-gold font-medium px-1">{scanErrors.get(item.id)}</p>
               )}
 
-              {items.length === 0 && <p className="text-sm text-muted-foreground">Nog geen detecties. Klik op Scannen.</p>}
-
-              {items.map((it, idx) => (
-                <div key={idx} className="mb-2 rounded-lg p-2">
-                  <p className="text-sm font-semibold">{it.category}</p>
-                  <p className="text-[13px] text-muted-foreground">{it.style}</p>
-                  <p className="text-[13px] text-muted-foreground">Kleur: {it.color}</p>
-                  {it.fabric && <p className="text-[13px] text-muted-foreground">Stof: {it.fabric}</p>}
-                </div>
-              ))}
-
-              <div className="mt-3 flex items-center justify-between">
+              <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
                 <button
-                  onClick={() => triggerScan(image)}
-                  className="pill-button inline-flex items-center gap-2"
+                  onClick={() => triggerScan(item.id, item.image_url)}
+                  className="text-[11px] font-medium text-gold hover:underline flex items-center gap-1"
                 >
-                  <Search className="h-4 w-4" /> Scannen
+                  <Search className="h-3.5 w-3.5" /> AI Scan
                 </button>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+                  {item.times_worn || 0}x gedragen
+                </span>
               </div>
             </article>
           ))}

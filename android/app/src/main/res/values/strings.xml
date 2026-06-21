@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">YourClothes</string>
+    <string name="title_activity_main">YourClothes</string>
+    <string name="package_name">com.yourclothes.app</string>
+    <string name="custom_url_scheme">com.yourclothes.app</string>
+    <string name="facebook_app_id">NOT_USED</string>
+    <string name="fb_login_protocol_scheme">fbNOT_USED</string>
+</resources>

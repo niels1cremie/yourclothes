@@ -44,12 +44,12 @@ export const Route = createFileRoute("/dpa")({
       </p>
       <ul>
         <li>
-          <strong>Lovable Cloud (Supabase infrastructure)</strong> — authentication,
-          database, file storage, and serverless functions. Region: EU/US.
+          <strong>Supabase</strong> — authentication, database, file storage,
+          and serverless functions. Region: EU/US.
           Purpose: storing account, wardrobe, and application data.
         </li>
         <li>
-          <strong>Lovable AI Gateway</strong> — routes AI requests to the
+          <strong>AI Model Providers</strong> — routes AI requests to the
           underlying model providers used by the Service (which may include
           Google, OpenAI, Anthropic, and other commercial model providers).
           Purpose: generating style, color, and outfit recommendations from your

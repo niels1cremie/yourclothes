@@ -1,17 +1,28 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  Camera,
+  Camera as CameraIcon,
   Check,
   Sparkles,
   Upload,
   X,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { scanClothing, type ClothingItem } from "@/lib/api/clothing-scanner.functions";
+import { analyzeUser } from "@/lib/api/user-analyzer.functions";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import { App } from "@capacitor/app";
+import mixpanel from "mixpanel-browser";
+
+interface GalleryPlugin {
+  pickImage(): Promise<{ webPath: string }>;
+}
+const Gallery = registerPlugin<GalleryPlugin>("Gallery");
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -103,6 +114,35 @@ const TOTAL_STEPS = STEPS.length;
 /* ------------------------------- helpers -------------------------------- */
 
 /**
+ * Converts a base64 string or data URL to a File object.
+ */
+async function base64ToFile(base64Data: string, fileName: string, mimeType: string): Promise<File> {
+  try {
+    const dataUrl = base64Data.startsWith("data:") ? base64Data : `data:${mimeType};base64,${base64Data}`;
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: mimeType });
+  } catch (e) {
+    console.error("base64ToFile conversion failed:", e);
+    throw new Error("Afbeelding kon niet worden verwerkt.");
+  }
+}
+
+/**
+ * Converts a webPath (blob URL) to a File object.
+ */
+async function webPathToFile(webPath: string, fileName: string, mimeType: string): Promise<File> {
+  try {
+    const res = await fetch(webPath);
+    const blob = await res.blob();
+    return new File([blob], fileName, { type: mimeType });
+  } catch (e) {
+    console.error("webPathToFile conversion failed:", e);
+    throw new Error("Bestand kon niet worden gelezen van apparaat.");
+  }
+}
+
+/**
  * Upload a file to Supabase Storage in the 'wardrobe-photos' bucket.
  * Returns the public URL of the uploaded file, or null on error.
  */
@@ -164,8 +204,27 @@ function Onboarding() {
   const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
+    // Handle restored camera data if the app was killed while taking a photo
+    const handleRestoredResult = async (result: any) => {
+      if (result.pluginId === "Camera" && result.success && result.data) {
+        console.log("Restored camera result detected");
+        if (result.data.webPath) {
+          const file = await webPathToFile(result.data.webPath, `photo.${result.data.format}`, `image/${result.data.format}`);
+          // We don't know which photo was being taken, so we can't easily auto-set it
+          // but we can at least show a toast or handle it if we store intent
+          toast.info("Je foto is hersteld na een app-herstart.");
+        }
+      }
+    };
+    App.addListener("appRestoredResult", handleRestoredResult);
+    return () => {
+      App.removeAllListeners();
+    };
+  }, []);
+
+  useEffect(() => {
     try {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as { step?: number; state?: Partial<OnboardingState> };
         if (parsed.state) setS((prev) => ({ ...prev, ...parsed.state }));
@@ -182,7 +241,7 @@ function Onboarding() {
 
   useEffect(() => {
     if (!hydrated) return;
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, state: s }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, state: s }));
   }, [step, s, hydrated]);
 
   const update = useCallback(
@@ -209,12 +268,20 @@ function Onboarding() {
   const next = async () => {
     if (!canAdvance) return;
     if (step < TOTAL_STEPS - 1) {
-      setStep((prev) => prev + 1);
+      const nextStep = step + 1;
+      setStep(nextStep);
+      mixpanel.track("onboarding_step_completed", {
+        step: step,
+        next_step: nextStep,
+        step_name: STEPS[step],
+      });
       return;
     }
     setFinishing(true);
     try {
-      sessionStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem("onboarding_completed", "true");
+      localStorage.removeItem(STORAGE_KEY);
+      mixpanel.track("onboarding_finished");
       navigate({ to: "/" });
     } finally {
       setFinishing(false);
@@ -222,8 +289,17 @@ function Onboarding() {
   };
 
   const back = () => {
-    if (step > 0) setStep((prev) => prev - 1);
-    else navigate({ to: "/" });
+    if (step > 0) {
+      const prevStep = step - 1;
+      setStep(prevStep);
+      mixpanel.track("onboarding_back_pressed", {
+        current_step: step,
+        previous_step: prevStep,
+      });
+    } else {
+      mixpanel.track("onboarding_abandoned");
+      navigate({ to: "/" });
+    }
   };
 
   const progressPercent = ((step + 1) / TOTAL_STEPS) * 100;
@@ -786,48 +862,90 @@ function StepScan({
   const [errorFull, setErrorFull] = useState<string | null>(null);
   const [errorFace, setErrorFace] = useState<string | null>(null);
 
-  const onUpload =
-    (which: "fullBodyPhoto" | "facePhoto") => async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+  const handleManualUpload = async (which: "fullBodyPhoto" | "facePhoto", file: File) => {
+    // Set loading state
+    if (which === "fullBodyPhoto") {
+      setUploadingFull(true);
+      setErrorFull(null);
+    } else {
+      setUploadingFace(true);
+      setErrorFace(null);
+    }
 
-      // Set loading state
+    // Identify user if logged in
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Upload to Supabase
+    const { url, error } = await uploadFileToSupabase(file);
+
+    if (error) {
       if (which === "fullBodyPhoto") {
-        setUploadingFull(true);
-        setErrorFull(null);
+        setErrorFull(error);
+        setUploadingFull(false);
       } else {
-        setUploadingFace(true);
-        setErrorFace(null);
+        setErrorFace(error);
+        setUploadingFace(false);
       }
-
-      // Upload to Supabase
-      const { url, error } = await uploadFileToSupabase(file);
-
-      if (error) {
-        if (which === "fullBodyPhoto") {
-          setErrorFull(error);
-          setUploadingFull(false);
-        } else {
-          setErrorFace(error);
-          setUploadingFace(false);
-        }
-      } else if (url) {
-        update(which, url);
-        if (which === "fullBodyPhoto") {
-          setUploadingFull(false);
-        } else {
-          setUploadingFace(false);
-        }
+      toast.error(error);
+    } else if (url) {
+      update(which, url);
+      mixpanel.track("onboarding_photo_uploaded", {
+        photo_type: which,
+        is_authenticated: !!user
+      });
+      if (which === "fullBodyPhoto") {
+        setUploadingFull(false);
+      } else {
+        setUploadingFace(false);
       }
-    };
+    }
+  };
 
-  const runScan = () => {
+  const runScan = async () => {
+    if (!s.fullBodyPhoto || !s.facePhoto) return;
+
     setScanning(true);
-    // Mocked AI for now — wired to Lovable AI Gateway in the next iteration.
-    window.setTimeout(() => {
+    mixpanel.track("ai_scan_started");
+    try {
+      const result = await analyzeUser({
+        data: {
+          fullBodyImageUrl: s.fullBodyPhoto,
+          faceImageUrl: s.facePhoto,
+        },
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        mixpanel.track("ai_scan_error", { error: result.error });
+      } else {
+        mixpanel.track("ai_scan_success", {
+          body_shape: result.bodyShape,
+          color_season: result.colorSeason,
+        });
+        update("bodyShape", result.bodyShape as any);
+        // We might want to store more data in the state if needed
+        update("scanComplete", true);
+
+        // Also try to sync to profile if logged in
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({
+            body_shape: result.bodyShape,
+            skin_undertone: result.skinUndertone,
+            color_season: result.colorSeason,
+            preferences: {
+              ...s.styleTags,
+              suggestedPalette: result.suggestedPalette,
+              stylePersona: result.stylePersona
+            }
+          }).eq("id", user.id);
+        }
+      }
+    } catch (err) {
+      console.error("Scan error:", err);
+    } finally {
       setScanning(false);
-      update("scanComplete", true);
-    }, 2200);
+    }
   };
 
   if (s.scanComplete) {
@@ -847,7 +965,7 @@ function StepScan({
           title="Full body"
           hint="Neutral pose · fitted clothing"
           imageUrl={s.fullBodyPhoto}
-          onUpload={onUpload("fullBodyPhoto")}
+          onFileSelect={(file) => handleManualUpload("fullBodyPhoto", file)}
           onRemove={() => update("fullBodyPhoto", null)}
           isLoading={uploadingFull}
           error={errorFull}
@@ -857,7 +975,7 @@ function StepScan({
           title="Face close-up"
           hint="Natural light"
           imageUrl={s.facePhoto}
-          onUpload={onUpload("facePhoto")}
+          onFileSelect={(file) => handleManualUpload("facePhoto", file)}
           onRemove={() => update("facePhoto", null)}
           isLoading={uploadingFace}
           error={errorFace}
@@ -892,7 +1010,7 @@ function PhotoSlot({
   title,
   hint,
   imageUrl,
-  onUpload,
+  onFileSelect,
   onRemove,
   isLoading = false,
   error = null,
@@ -901,14 +1019,45 @@ function PhotoSlot({
   title: string;
   hint: string;
   imageUrl: string | null;
-  onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileSelect: (file: File) => void;
   onRemove: () => void;
   isLoading?: boolean;
   error?: string | null;
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showOptions, setShowOptions] = useState(false);
+
+  const handlePick = async (source: CameraSource) => {
+    setShowOptions(false);
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Base64,
+        source: source,
+      });
+
+      if (image.base64String) {
+        const file = await base64ToFile(image.base64String, `photo.${image.format}`, `image/${image.format}`);
+        onFileSelect(file);
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+    }
+  };
+
+  const handleNativeClick = (e: React.MouseEvent) => {
+    if (imageUrl || isLoading) return;
+    e.preventDefault();
+    setShowOptions(true);
+  };
+
   return (
-    <div>
-      <label className="editorial-card group flex cursor-pointer items-center gap-3 p-3">
+    <div className="relative">
+      <div
+        className="editorial-card group flex items-center gap-3 p-3 cursor-pointer"
+        onClick={Capacitor.isNativePlatform() ? handleNativeClick : undefined}
+      >
         <div
           className="relative h-14 w-14 flex-none overflow-hidden rounded-lg"
           style={{ background: "var(--color-secondary)" }}
@@ -921,7 +1070,7 @@ function PhotoSlot({
             </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <Camera className="h-4 w-4 text-muted-foreground" />
+              <CameraIcon className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
           <span
@@ -940,10 +1089,11 @@ function PhotoSlot({
           <div className="text-[13px] font-medium">{title}</div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>
         </div>
+
         {imageUrl ? (
           <button
             onClick={(e) => {
-              e.preventDefault();
+              e.stopPropagation();
               onRemove();
             }}
             aria-label="Remove"
@@ -952,19 +1102,58 @@ function PhotoSlot({
             <X className="h-3.5 w-3.5" />
           </button>
         ) : (
-          <Upload
-            className={`h-4 w-4 shrink-0 ${isLoading ? "opacity-50" : "text-muted-foreground"}`}
+          <div className="flex items-center gap-2">
+            {isLoading ? (
+              <span className="btn-spinner opacity-50" />
+            ) : (
+              <Upload className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
+        )}
+
+        {!Capacitor.isNativePlatform() && !imageUrl && !isLoading && (
+          <input
+            type="file"
+            accept="image/*"
+            // Explicitly remove capture to prevent auto-camera trigger
+            className="absolute inset-0 opacity-0 cursor-pointer"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onFileSelect(file);
+            }}
           />
         )}
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={onUpload}
-          disabled={isLoading}
-        />
-      </label>
+      </div>
+
+      {showOptions && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center gap-4 rounded-2xl bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
+          <button
+            onClick={() => handlePick(CameraSource.Camera)}
+            className="flex flex-col items-center gap-2 rounded-xl p-3 transition-colors hover:bg-secondary"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold/10 text-gold">
+              <CameraIcon className="h-6 w-6" />
+            </div>
+            <span className="text-xs font-medium">Foto maken</span>
+          </button>
+          <button
+            onClick={() => handlePick(CameraSource.Photos)}
+            className="flex flex-col items-center gap-2 rounded-xl p-3 transition-colors hover:bg-secondary"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold/10 text-gold">
+              <ImageIcon className="h-6 w-6" />
+            </div>
+            <span className="text-xs font-medium">Galerij</span>
+          </button>
+          <button
+            onClick={() => setShowOptions(false)}
+            className="absolute right-3 top-3 text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {error && (
         <div className="mt-1.5 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2">
           <AlertCircle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
@@ -1074,91 +1263,160 @@ function StepWardrobe({
   const [scanningIndices, setScanningIndices] = useState<Set<number>>(new Set());
   const [detectedItems, setDetectedItems] = useState<Map<number, ClothingItem[]>>(new Map());
   const [scanErrors, setScanErrors] = useState<Map<number, string>>(new Map());
+  const [showOptions, setShowOptions] = useState(false);
 
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
+    const processFiles = async (files: FileList | File[]) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Log eerst in om items aan je kast toe te voegen.");
+      navigate({ to: "/auth" });
+      return;
+    }
 
     const newUrls: string[] = [];
-    const newErrors = new Map(uploadErrors);
     const uploading = new Set(uploadingIndices);
 
-    // Upload each file
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const fileArray = Array.from(files);
+
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
       const index = s.wardrobePhotos.length + newUrls.length;
 
-      // Set loading state
       uploading.add(index);
       setUploadingIndices(new Set(uploading));
 
-      // Upload to Supabase
       const { url, error } = await uploadFileToSupabase(file);
 
       if (error) {
-        newErrors.set(index, error);
+        toast.error(`Upload fout: ${error}`);
       } else if (url) {
-        newUrls.push(url);
+        // Create the record in wardrobe_items immediately
+        const { data: newItem, error: dbError } = await supabase
+          .from("wardrobe_items")
+          .insert({
+            user_id: user.id,
+            image_url: url,
+            category: 'other', // Default
+            laundry_status: 'clean'
+          })
+          .select()
+          .single();
 
-        // Auto-scan the clothing in the uploaded image
-        await scanUploadedClothing(index, url);
+        if (!dbError && newItem) {
+          newUrls.push(url);
+          mixpanel.track("wardrobe_item_added", { source: "onboarding" });
+          // Auto-scan using the new ID
+          await scanUploadedClothing(newItem.id, url);
+        }
       }
 
-      // Clear loading state for this item
       uploading.delete(index);
       setUploadingIndices(new Set(uploading));
     }
 
-    // Update errors and photos
-    setUploadErrors(newErrors);
     if (newUrls.length > 0) {
       update("wardrobePhotos", [...s.wardrobePhotos, ...newUrls]);
     }
-
-    // Reset input
-    e.target.value = "";
   };
 
-  const scanUploadedClothing = async (index: number, imageUrl: string) => {
-    setScanningIndices((prev) => new Set(prev).add(index));
+  const handlePick = async (source: CameraSource) => {
+    setShowOptions(false);
+    try {
+      if (source === CameraSource.Photos && Capacitor.isNativePlatform()) {
+        // Use our custom Native Gallery Plugin
+        const result = await Gallery.pickImage();
+        if (result.webPath) {
+          const file = await webPathToFile(result.webPath, `photo-${Date.now()}.jpg`, "image/jpeg");
+          onFileSelect(file);
+        }
+        return;
+      }
+
+      if (source === CameraSource.Photos) {
+        // Multiple selection from gallery
+        const result = await Camera.pickImages({
+          quality: 80, // Reduced quality for memory efficiency
+          limit: 10,
+        });
+
+        if (result.photos.length === 0) return;
+
+        const files: File[] = [];
+        for (const photo of result.photos) {
+          try {
+            // result.photos uses webPath, which is a blob/file URL on the device
+            const file = await webPathToFile(photo.webPath, `wardrobe-${Date.now()}.jpg`, "image/jpeg");
+            files.push(file);
+          } catch (fetchErr) {
+            console.error("Error fetching photo webPath:", fetchErr);
+          }
+        }
+        if (files.length > 0) await processFiles(files);
+      } else {
+        // Single photo from camera
+        const image = await Camera.getPhoto({
+          quality: 80, // Reduced quality for memory efficiency
+          allowEditing: false,
+          resultType: CameraResultType.Uri, // Use Uri instead of Base64 for memory efficiency
+          source: source,
+        });
+
+        if (image.webPath) {
+          const file = await webPathToFile(image.webPath, `photo.${image.format}`, `image/${image.format}`);
+          onFileSelect(file);
+        }
+      }
+    } catch (err) {
+      console.error("Camera error details:", err);
+      // Don't show error if user cancelled
+      if (err instanceof Error && err.message.toLowerCase().includes("user cancelled")) {
+        return;
+      }
+      toast.error("Fout bij openen camera/galerij");
+    }
+  };
+
+  const scanUploadedClothing = async (id: string, imageUrl: string) => {
     const newScanErrors = new Map(scanErrors);
 
     try {
       const result = await scanClothing({ data: { imageUrl } });
 
       if (result.error) {
-        newScanErrors.set(index, result.error);
-      } else if (result.items) {
-        setDetectedItems((prev) => new Map(prev).set(index, result.items!));
-        newScanErrors.delete(index);
+        newScanErrors.set(id, result.error);
+      } else if (result.items && result.items.length > 0) {
+        const item = result.items[0];
+        // Persist to DB
+        await supabase
+          .from("wardrobe_items")
+          .update({
+            category: item.category,
+            style: item.style,
+            color: item.color,
+            fabric: item.fabric
+          })
+          .eq("id", id);
+
+        setDetectedItems((prev) => new Map(prev).set(id, result.items!));
+        newScanErrors.delete(id);
       }
     } catch (err) {
       console.error("Scan error:", err);
-      newScanErrors.set(index, "Fout bij het scannen van het kledingstuk.");
+      newScanErrors.set(id, "Fout bij het scannen van het kledingstuk.");
     }
 
     setScanErrors(newScanErrors);
-    setScanningIndices((prev) => {
-      const next = new Set(prev);
-      next.delete(index);
-      return next;
-    });
   };
 
   const handleRemove = (i: number) => {
     const newPhotos = s.wardrobePhotos.filter((_, j) => j !== i);
     update("wardrobePhotos", newPhotos);
-
-    // Also remove any error for this index
     const newErrors = new Map(uploadErrors);
     newErrors.delete(i);
     setUploadErrors(newErrors);
-
-    // Remove scan results
     const newDetected = new Map(detectedItems);
     newDetected.delete(i);
     setDetectedItems(newDetected);
-
     const newScanErrors = new Map(scanErrors);
     newScanErrors.delete(i);
     setScanErrors(newScanErrors);
@@ -1174,7 +1432,6 @@ function StepWardrobe({
       <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4">
         {s.wardrobePhotos.map((url, i) => (
           <div key={i} className="flex flex-col">
-            {/* Photo with remove button */}
             <div className="relative aspect-square overflow-hidden rounded-lg border border-border">
               <img src={url} alt="" className="h-full w-full object-cover" />
               <button
@@ -1184,8 +1441,6 @@ function StepWardrobe({
               >
                 <X className="h-2.5 w-2.5" />
               </button>
-
-              {/* Scanning indicator */}
               {scanningIndices.has(i) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                   <div className="animate-spin">
@@ -1194,13 +1449,9 @@ function StepWardrobe({
                 </div>
               )}
             </div>
-
-            {/* Upload errors */}
             {uploadErrors.has(i) && (
               <p className="mt-1 text-[10px] text-red-600">{uploadErrors.get(i)}</p>
             )}
-
-            {/* Scan results or errors */}
             {detectedItems.has(i) && !scanErrors.has(i) && (
               <div className="mt-2 flex flex-col gap-1 rounded-lg bg-gold/10 p-2">
                 {detectedItems.get(i)!.map((item, idx) => (
@@ -1212,8 +1463,6 @@ function StepWardrobe({
                 ))}
               </div>
             )}
-
-            {/* Scan errors */}
             {scanErrors.has(i) && (
               <div className="mt-2 rounded-lg bg-red-50 p-2">
                 <p className="text-[9px] text-red-600 flex items-start gap-1">
@@ -1225,17 +1474,60 @@ function StepWardrobe({
           </div>
         ))}
 
-        {/* Upload button */}
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-all hover:border-gold hover:bg-secondary/50 active:scale-[0.98]">
-          <Camera className="h-4 w-4" />
-          <span
-            className="text-[9px]"
-            style={{ fontFamily: "var(--font-label)", letterSpacing: "0.15em" }}
+        <div className="relative aspect-square">
+          <button
+            onClick={() => Capacitor.isNativePlatform() ? setShowOptions(true) : undefined}
+            className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-surface text-muted-foreground transition-all hover:border-gold hover:bg-secondary/50 active:scale-[0.98]"
           >
-            TOEVOEGEN
-          </span>
-          <input type="file" multiple accept="image/*" className="hidden" onChange={onUpload} />
-        </label>
+            <CameraIcon className="h-4 w-4" />
+            <span
+              className="text-[9px]"
+              style={{ fontFamily: "var(--font-label)", letterSpacing: "0.15em" }}
+            >
+              TOEVOEGEN
+            </span>
+            {!Capacitor.isNativePlatform() && (
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                // No capture attribute here either
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  if (e.target.files) processFiles(e.target.files);
+                  e.target.value = "";
+                }}
+              />
+            )}
+          </button>
+
+          {showOptions && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in">
+              <div className="editorial-card w-64 p-4 shadow-2xl">
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => handlePick(CameraSource.Camera)}
+                    className="pill-button flex items-center justify-center gap-2 py-3"
+                  >
+                    <CameraIcon className="h-4 w-4" /> Foto maken
+                  </button>
+                  <button
+                    onClick={() => handlePick(CameraSource.Photos)}
+                    className="pill-ghost flex items-center justify-center gap-2 py-3"
+                  >
+                    <ImageIcon className="h-4 w-4" /> Uit galerij
+                  </button>
+                  <button
+                    onClick={() => setShowOptions(false)}
+                    className="mt-2 text-xs text-muted-foreground underline"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-3 editorial-card p-3 text-[11px] leading-snug text-muted-foreground">

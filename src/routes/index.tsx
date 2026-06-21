@@ -1,4 +1,5 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   ArrowRight,
   CalendarDays,
@@ -56,7 +57,7 @@ const FEATURE_CARDS = [
   {
     title: "Privé by design",
     description:
-      "Je onboarding blijft bewust tijdelijk en wordt niet lokaal opgeslagen op je apparaat.",
+      "Je voortgang wordt veilig en alleen lokaal op je apparaat opgeslagen.",
     icon: ShieldCheck,
     accent: "bg-secondary text-foreground",
   },
@@ -69,6 +70,15 @@ const STATS = [
 ] as const;
 
 function Welcome() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const isCompleted = localStorage.getItem("onboarding_completed");
+    if (!isCompleted) {
+      navigate({ to: "/onboarding" });
+    }
+  }, [navigate]);
+
   return (
     <main className="page-gradient min-h-screen">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-10">
@@ -93,10 +103,28 @@ function Welcome() {
                 PRIJZEN
               </Link>
               <Link
+                to="/planner"
+                className="rounded-full px-2 py-1 transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                PLANNER
+              </Link>
+              <Link
+                to="/insights"
+                className="rounded-full px-2 py-1 transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                INZICHTEN
+              </Link>
+              <Link
                 to="/wardrobe"
                 className="rounded-full px-2 py-1 transition-colors hover:bg-secondary hover:text-foreground"
               >
                 KAST
+              </Link>
+              <Link
+                to="/profile"
+                className="rounded-full px-2 py-1 transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                PROFIEL
               </Link>
               <Link to="/onboarding" className="pill-button pill-button-sm hidden sm:inline-flex">
                 Begin

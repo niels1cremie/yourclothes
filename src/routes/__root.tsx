@@ -6,11 +6,13 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useLocation,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import mixpanel from "mixpanel-browser";
+import Smartlook from "smartlook-client";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CookieConsent } from "../components/CookieConsent";
 
 function NotFoundComponent() {
@@ -38,9 +40,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -87,8 +86,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "MIRROR — Your Digital Wardrobe" },
       { name: "twitter:description", content: "An AI-powered personal stylist. Build your digital wardrobe, plan outfits, and discover your style DNA." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6312503c-86e3-4bbb-bb9f-619d668b829b/id-preview-6be76a73--1e0f9fa5-a75d-43fb-adbb-e429f4181b5e.lovable.app-1781471283646.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/6312503c-86e3-4bbb-bb9f-619d668b829b/id-preview-6be76a73--1e0f9fa5-a75d-43fb-adbb-e429f4181b5e.lovable.app-1781471283646.png" },
+      { property: "og:image", content: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&h=630&fit=crop" },
+      { name: "twitter:image", content: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1200&h=630&fit=crop" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -122,6 +121,47 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+
+  useEffect(() => {
+    const initTracking = (consent: any) => {
+      if (consent?.analytics) {
+        // Initialize Mixpanel
+        mixpanel.init("3051daf61a8e7f1cb93fe11fd750514d", {
+          debug: true,
+          track_pageview: true,
+          persistence: "localStorage",
+        });
+
+        // Initialize Smartlook
+        Smartlook.init("fd606eadba4118d345eb176e29a390dc2ce1c8f1");
+        console.log("[Tracking] Analytics initialized with consent");
+      }
+    };
+
+    // Check initial consent
+    const raw = localStorage.getItem("mirror.cookie_consent.v1");
+    if (raw) {
+      initTracking(JSON.parse(raw));
+    }
+
+    // Listen for consent changes
+    const handleConsentChange = (e: any) => {
+      initTracking(e.detail);
+    };
+
+    window.addEventListener("mirror:consent-change", handleConsentChange);
+    return () => window.removeEventListener("mirror:consent-change", handleConsentChange);
+  }, []);
+
+  useEffect(() => {
+    // Track page views on location change (only if initialized)
+    if (mixpanel && (mixpanel as any)._flags?.identify_called !== undefined) {
+      mixpanel.track("page_view", {
+        path: location.pathname,
+      });
+    }
+  }, [location]);
 
   return (
     <QueryClientProvider client={queryClient}>

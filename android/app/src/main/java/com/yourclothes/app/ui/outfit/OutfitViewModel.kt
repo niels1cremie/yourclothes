@@ -74,7 +74,7 @@ class OutfitViewModel(
                     notes = "Gegenereerd door MIRROR AI"
                 )
                 plannerRepository.createPlannedOutfit(outfit)
-            } catch (e: Exception) {
+            } catch (ignored: Exception) {
                 // Simplified error handling
             }
         }

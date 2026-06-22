@@ -4,6 +4,7 @@ import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -11,14 +12,18 @@ import java.time.format.DateTimeFormatter
 @Serializable
 data class PlannedOutfit(
     val id: String? = null,
-    val user_id: String,
+    @SerialName("user_id")
+    val userId: String,
     val date: String,
     val occasion: String? = null,
     val items: List<WardrobeItem> = emptyList(),
     val notes: String? = null,
-    val weather_condition: String? = null,
-    val created_at: String? = null,
-    val updated_at: String? = null
+    @SerialName("weather_condition")
+    val weatherCondition: String? = null,
+    @SerialName("created_at")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null
 )
 
 @Serializable
@@ -26,7 +31,8 @@ data class OccasionTemplate(
     val id: String? = null,
     val name: String,
     val description: String? = null,
-    val suggested_categories: List<String> = emptyList()
+    @SerialName("suggested_categories")
+    val suggestedCategories: List<String> = emptyList()
 )
 
 class PlannerRepository {
@@ -83,9 +89,7 @@ class PlannerRepository {
         try {
             val result = client.postgrest["planned_outfits"]
                 .update(outfit) {
-                    filter {
-                        eq("id", outfit.id ?: "")
-                    }
+                    filter { eq("id", outfit.id ?: "") }
                     select()
                 }
                 .decodeSingleOrNull<PlannedOutfit>()
@@ -117,20 +121,5 @@ class PlannerRepository {
             OccasionTemplate("4", "Sport", "Training", listOf("Sportshirts")),
             OccasionTemplate("5", "Feest", "Party", listOf("Accessoires"))
         )
-    }
-
-    suspend fun getWeatherOutfitSuggestions(userId: String, weatherCondition: String): List<WardrobeItem> = withContext(Dispatchers.IO) {
-        try {
-            client.postgrest["wardrobe_items"]
-                .select {
-                    filter {
-                        eq("user_id", userId)
-                        eq("laundry_status", "clean")
-                    }
-                }
-                .decodeList<WardrobeItem>()
-        } catch (e: Exception) {
-            emptyList()
-        }
     }
 }

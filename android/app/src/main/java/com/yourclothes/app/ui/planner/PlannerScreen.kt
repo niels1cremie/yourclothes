@@ -1,8 +1,5 @@
 package com.yourclothes.app.ui.planner
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,7 +7,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -183,8 +179,6 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
             onCreateOutfit = { occasion, notes ->
                 viewModel.startCreatingOutfit()
                 showCreateDialog.value = false
-                // Logic to select items should be added
-                // For now, this just starts the process
             },
             onDismiss = { showCreateDialog.value = false }
         )
@@ -283,7 +277,7 @@ fun OutfitDetailCard(outfit: PlannedOutfit, onEdit: () -> Unit) {
                 }
             }
 
-            outfit.weather_condition?.let {
+            outfit.weatherCondition?.let {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(

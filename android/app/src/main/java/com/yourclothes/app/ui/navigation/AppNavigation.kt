@@ -62,6 +62,15 @@ fun AppNavigation(
             )
         }
 
+        composable<Screen.Onboarding> {
+            OnboardingScreen { _, _, _, _ ->
+                // Mark onboarding as completed in profile would happen here
+                navController.navigate(Screen.Main) {
+                    popUpTo(Screen.Onboarding) { inclusive = true }
+                }
+            }
+        }
+
         composable<Screen.Main> {
             MainContainer(
                 authRepository,
@@ -87,11 +96,11 @@ fun MainContainer(
     val innerNavController = rememberNavController()
     
     val items = listOf(
-        NavigationItem(Screen.Wardrobe, "Kast", Icons.Default.PhotoLibrary, Screen.Wardrobe::class),
-        NavigationItem(Screen.Planner, "Planner", Icons.Default.CalendarMonth, Screen.Planner::class),
-        NavigationItem(Screen.OutfitGenerator, "Stijl", Icons.Default.AutoAwesome, Screen.OutfitGenerator::class),
-        NavigationItem(Screen.Insights, "Insights", Icons.Default.Insights, Screen.Insights::class),
-        NavigationItem(Screen.Profile, "Profiel", Icons.Default.Person, Screen.Profile::class)
+        AppNavItem(Screen.Wardrobe, "Kast", Icons.Default.PhotoLibrary, Screen.Wardrobe::class),
+        AppNavItem(Screen.Planner, "Planner", Icons.Default.CalendarMonth, Screen.Planner::class),
+        AppNavItem(Screen.OutfitGenerator, "Stijl", Icons.Default.AutoAwesome, Screen.OutfitGenerator::class),
+        AppNavItem(Screen.Insights, "Insights", Icons.Default.Insights, Screen.Insights::class),
+        AppNavItem(Screen.Profile, "Profiel", Icons.Default.Person, Screen.Profile::class)
     )
 
     Scaffold(
@@ -146,7 +155,7 @@ fun MainContainer(
                 }
                 composable<Screen.Insights> {
                     val viewModel: InsightsViewModel = viewModel {
-                        InsightsViewModel(wardrobeRepository, authRepository)
+                        InsightsViewModel(wardrobeRepository, authRepository, aiRepository)
                     }
                     InsightsScreen(viewModel)
                 }
@@ -173,7 +182,7 @@ fun MainContainer(
     }
 }
 
-data class NavigationItem(
+data class AppNavItem(
     val screen: Any,
     val label: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,

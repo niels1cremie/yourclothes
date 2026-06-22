@@ -67,7 +67,7 @@ class OutfitViewModel(
             try {
                 val today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_DATE)
                 val outfit = PlannedOutfit(
-                    user_id = user.id,
+                    userId = user.id,
                     date = today,
                     occasion = occasion,
                     items = items,

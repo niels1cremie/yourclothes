@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +21,7 @@ import coil3.request.ImageRequest
 import coil3.size.Scale
 import coil3.size.Size
 import com.yourclothes.app.data.WardrobeItem
+import com.yourclothes.app.ui.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,6 +29,7 @@ fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit
     val state by viewModel.state.collectAsState()
     var isGridView by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("Alle") }
 
     Scaffold(
         topBar = {
@@ -37,7 +38,7 @@ fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit
                     title = { Text("Mijn Kledingkast") },
                     actions = {
                         IconButton(onClick = { isGridView = !isGridView }) {
-                            Icon(if (isGridView) Icons.Default.GridView else Icons.Default.ViewList, null)
+                            Icon(if (isGridView) Icons.Default.ViewList else Icons.Default.GridView, null)
                         }
                     }
                 )
@@ -52,55 +53,42 @@ fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {}
                 
-                FilterChips()
+                FilterChips(
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = { selectedCategory = it }
+                )
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToScanner) {
-                Icon(Icons.Default.Add, "Toevoegen")
-            }
+            ExtendedFloatingActionButton(
+                onClick = onNavigateToScanner,
+                icon = { Icon(Icons.Default.AddAPhoto, null) },
+                text = { Text("Scannen") },
+                containerColor = MaterialTheme.colorScheme.primary
+            )
         }
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             when (val s = state) {
-                is WardrobeState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is WardrobeState.Error -> {
-                    Text(s.message, color = MaterialTheme.colorScheme.error)
-                }
+                is WardrobeState.Loading -> LoadingView()
+                is WardrobeState.Error -> ErrorView(message = s.message, onRetry = { viewModel.loadItems() })
                 is WardrobeState.Success -> {
-                    val filteredItems = if (searchQuery.isBlank()) {
-                        s.items
-                    } else {
-                        s.items.filter { 
-                            it.category.contains(searchQuery, ignoreCase = true) || 
-                            it.color?.contains(searchQuery, ignoreCase = true) == true 
-                        }
+                    val filteredItems = s.items.filter { item ->
+                        (selectedCategory == "Alle" || item.category.equals(selectedCategory, ignoreCase = true)) &&
+                        (searchQuery.isBlank() || item.category.contains(searchQuery, ignoreCase = true) || 
+                         item.color?.contains(searchQuery, ignoreCase = true) == true)
                     }
 
-                    if (isGridView) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(2),
-                            contentPadding = PaddingValues(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(filteredItems) { item ->
-                                WardrobeItemCard(item)
-                            }
-                        }
+                    if (filteredItems.isEmpty()) {
+                        EmptyView(
+                            message = if (s.items.isEmpty()) "Je kledingkast is leeg.\nScan je eerste kledingstuk!" else "Geen resultaten gevonden.",
+                            icon = Icons.Default.Inventory2
+                        )
                     } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            items(filteredItems) { item ->
-                                WardrobeListItem(item)
-                            }
-                        }
+                        WardrobeList(
+                            items = filteredItems,
+                            isGridView = isGridView
+                        )
                     }
                 }
             }
@@ -109,20 +97,49 @@ fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit
 }
 
 @Composable
-fun FilterChips() {
-    val filters = listOf("Alle", "Top", "Broeken", "Schoenen", "Jassen")
-    var selectedFilter by remember { mutableStateOf("Alle") }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+fun FilterChips(selectedCategory: String, onCategorySelected: (String) -> Unit) {
+    val categories = listOf("Alle", "Top", "Broeken", "Schoenen", "Jassen", "Accessoires")
+    
+    ScrollableTabRow(
+        selectedTabIndex = categories.indexOf(selectedCategory),
+        edgePadding = 16.dp,
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        divider = {},
+        indicator = {}
     ) {
-        filters.forEach { filter ->
+        categories.forEach { category ->
             FilterChip(
-                selected = selectedFilter == filter,
-                onClick = { selectedFilter = filter },
-                label = { Text(filter) }
+                selected = selectedCategory == category,
+                onClick = { onCategorySelected(category) },
+                label = { Text(category) },
+                modifier = Modifier.padding(horizontal = 4.dp),
+                shape = MaterialTheme.shapes.medium
             )
+        }
+    }
+}
+
+@Composable
+fun WardrobeList(items: List<WardrobeItem>, isGridView: Boolean) {
+    if (isGridView) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(items) { item ->
+                WardrobeItemCard(item)
+            }
+        }
+    } else {
+        LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(items) { item ->
+                WardrobeListItem(item)
+            }
         }
     }
 }
@@ -152,7 +169,7 @@ fun WardrobeItemCard(item: WardrobeItem) {
                     shape = MaterialTheme.shapes.small
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.Label,
+                        Icons.Default.Opacity,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onError,
                         modifier = Modifier.padding(4.dp).size(16.dp)
@@ -189,7 +206,7 @@ fun WardrobeListItem(item: WardrobeItem) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(item.category, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(item.color ?: "Kleurloos", style = MaterialTheme.typography.bodyMedium)
+                Text(item.color ?: "Geen kleur", style = MaterialTheme.typography.bodyMedium)
             }
             IconButton(onClick = {}) {
                 Icon(Icons.Default.MoreVert, null)

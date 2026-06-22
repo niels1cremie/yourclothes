@@ -126,12 +126,12 @@ class PlannerViewModel(
                 if (user != null) {
                     val formattedDate = _selectedDate.value.format(dateFormatter)
                     val newOutfit = PlannedOutfit(
-                        user_id = user.id,
+                        userId = user.id,
                         date = formattedDate,
                         occasion = occasion,
                         items = currentState.selectedItems,
                         notes = notes,
-                        weather_condition = weatherCondition
+                        weatherCondition = weatherCondition
                     )
 
                     val result = plannerRepository.createPlannedOutfit(newOutfit)

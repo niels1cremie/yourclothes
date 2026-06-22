@@ -5,16 +5,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.navigation.compose.rememberNavController
 import com.yourclothes.app.data.*
 import com.yourclothes.app.ui.navigation.AppNavigation
-import com.yourclothes.app.ui.theme.CoilConfig
-import com.yourclothes.app.ui.theme.MirrorTheme
 import com.yourclothes.app.ui.theme.AppColors
-import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
-import androidx.compose.material3.*
+import com.yourclothes.app.ui.theme.MirrorTheme
 import com.yourclothes.app.ui.settings.SettingsViewModel
 import com.yourclothes.app.ui.settings.SettingsState
 
@@ -23,19 +20,13 @@ class MainActivity : ComponentActivity() {
     private val wardrobeRepository = WardrobeRepository()
     private val aiRepository = AIRepository()
     private val plannerRepository = PlannerRepository()
-    private val profileRepository = ProfileRepository(this)
-    private val settingsRepository = SettingsRepository(this)
+    private val profileRepository by lazy { ProfileRepository(this) }
+    private val settingsRepository by lazy { SettingsRepository(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        val coilOkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-
-        val imageLoader = CoilConfig.createImageLoader(this, coilOkHttpClient)
         val settingsViewModel = SettingsViewModel(settingsRepository)
 
         setContent {
@@ -64,18 +55,29 @@ class MainActivity : ComponentActivity() {
                     else -> lightColorScheme(primary = AppColors.Gold)
                 }
             ) {
-                // Temporary removal of LocalImageLoader provider to verify composable context
-                val navController = rememberNavController()
-                AppNavigation(
-                    navController = navController,
-                    authRepository = authRepository,
-                    wardrobeRepository = wardrobeRepository,
-                    aiRepository = aiRepository,
-                    plannerRepository = plannerRepository,
-                    profileRepository = profileRepository,
-                    settingsRepository = settingsRepository
-                )
+                MainApp(authRepository, wardrobeRepository, aiRepository, plannerRepository, profileRepository, settingsRepository)
             }
         }
     }
+}
+
+@Composable
+fun MainApp(
+    authRepository: AuthRepository,
+    wardrobeRepository: WardrobeRepository,
+    aiRepository: AIRepository,
+    plannerRepository: PlannerRepository,
+    profileRepository: ProfileRepository,
+    settingsRepository: SettingsRepository
+) {
+    val navController = rememberNavController()
+    AppNavigation(
+        navController = navController,
+        authRepository = authRepository,
+        wardrobeRepository = wardrobeRepository,
+        aiRepository = aiRepository,
+        plannerRepository = plannerRepository,
+        profileRepository = profileRepository,
+        settingsRepository = settingsRepository
+    )
 }

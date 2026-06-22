@@ -184,7 +184,9 @@ fun MainScaffold(
                     val viewModel: ScannerViewModel = viewModel {
                         ScannerViewModel(wardrobeRepository, authRepository, aiRepository)
                     }
-                    ClothingScannerScreen(viewModel)
+                    ClothingScannerScreen(viewModel, onNavigateBack = {
+                        innerNavController.popBackStack()
+                    })
                 }
             }
         }

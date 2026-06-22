@@ -88,7 +88,7 @@ fun MainContainer(
     
     val items = listOf(
         NavigationItem(Screen.Wardrobe, "Kast", Icons.Default.PhotoLibrary, Screen.Wardrobe::class),
-        NavigationItem(Screen.Planner, "Planner", Icons.Default.Sparkles, Screen.Planner::class),
+        NavigationItem(Screen.Planner, "Planner", Icons.Default.CalendarMonth, Screen.Planner::class),
         NavigationItem(Screen.OutfitGenerator, "Stijl", Icons.Default.AutoAwesome, Screen.OutfitGenerator::class),
         NavigationItem(Screen.Insights, "Insights", Icons.Default.Insights, Screen.Insights::class),
         NavigationItem(Screen.Profile, "Profiel", Icons.Default.Person, Screen.Profile::class)

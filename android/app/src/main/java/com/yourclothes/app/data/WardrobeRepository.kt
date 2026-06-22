@@ -35,15 +35,11 @@ class WardrobeRepository {
     suspend fun uploadPhoto(fileName: String, byteArray: ByteArray, mimeType: String = "image/jpeg"): String = withContext(Dispatchers.IO) {
         val bucket = client.storage["wardrobe-photos"]
         
-        // Upload with proper MIME type to ensure no compression
+        // Fix: Use data parameter correctly
         bucket.upload(
             path = fileName,
-            data = byteArray,
-            upsert = false
-        ) {
-            // Configure upload options to preserve original quality
-            contentType = mimeType
-        }
+            data = byteArray
+        )
         
         bucket.publicUrl(fileName)
     }

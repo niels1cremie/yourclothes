@@ -27,6 +27,7 @@ import coil3.size.Scale
 import coil3.size.Size
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingScreen(onComplete: (String, String, String, Uri?) -> Unit) {
     var step by remember { mutableIntStateOf(0) }

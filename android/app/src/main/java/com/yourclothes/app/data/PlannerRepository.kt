@@ -1,7 +1,7 @@
 package com.yourclothes.app.data
 
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -58,7 +58,7 @@ class PlannerRepository {
                         gte("date", startDate.format(dateFormatter))
                         lte("date", endDate.format(dateFormatter))
                     }
-                    order("date", order = io.github.jan.supabase.postgrest.Order.ASCENDING)
+                    order("date", order = Order.ASCENDING)
                 }
                 .decodeList<PlannedOutfit>()
         } catch (e: Exception) {
@@ -84,7 +84,7 @@ class PlannerRepository {
             val result = client.postgrest["planned_outfits"]
                 .update(outfit) {
                     filter {
-                        eq("id", outfit.id)
+                        eq("id", outfit.id ?: "")
                     }
                     select()
                 }
@@ -110,43 +110,13 @@ class PlannerRepository {
     }
 
     suspend fun getOccasionTemplates(): List<OccasionTemplate> = withContext(Dispatchers.IO) {
-        try {
-            // Default templates if table doesn't exist yet
-            listOf(
-                OccasionTemplate(
-                    id = "1",
-                    name = "Casual",
-                    description = "Alledaags, comfortabele kleding",
-                    suggested_categories = listOf("T-shirts", "Jeans", "Sneakers")
-                ),
-                OccasionTemplate(
-                    id = "2", 
-                    name = "Business",
-                    description = "Professionele kleding voor werk",
-                    suggested_categories = listOf("Overhemden", "Broeken", "Pakken")
-                ),
-                OccasionTemplate(
-                    id = "3",
-                    name = "Formeel",
-                    description = "Chique kleding voor speciale gelegenheden",
-                    suggested_categories = listOf("Pakken", "Kostuums", "Formele schoenen")
-                ),
-                OccasionTemplate(
-                    id = "4",
-                    name = "Sport",
-                    description = "Sportieve kleding",
-                    suggested_categories = listOf("Sportshirts", "Sportbroeken", "Sportschoenen")
-                ),
-                OccasionTemplate(
-                    id = "5",
-                    name = "Feest",
-                    description = "Feestelijke kleding",
-                    suggested_categories = listOf("Feestkleding", "Accessoires", "Schoenen")
-                )
-            )
-        } catch (e: Exception) {
-            emptyList()
-        }
+        listOf(
+            OccasionTemplate("1", "Casual", "Alledaags", listOf("T-shirts", "Jeans")),
+            OccasionTemplate("2", "Business", "Werk", listOf("Overhemden", "Pantalons")),
+            OccasionTemplate("3", "Formeel", "Feest", listOf("Pakken", "Jurken")),
+            OccasionTemplate("4", "Sport", "Training", listOf("Sportshirts")),
+            OccasionTemplate("5", "Feest", "Party", listOf("Accessoires"))
+        )
     }
 
     suspend fun getWeatherOutfitSuggestions(userId: String, weatherCondition: String): List<WardrobeItem> = withContext(Dispatchers.IO) {

@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Droplets
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +23,7 @@ import coil3.size.Scale
 import coil3.size.Size
 import com.yourclothes.app.data.WardrobeItem
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit) {
     val state by viewModel.state.collectAsState()
@@ -151,7 +152,7 @@ fun WardrobeItemCard(item: WardrobeItem) {
                     shape = MaterialTheme.shapes.small
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.Droplets,
+                        Icons.AutoMirrored.Filled.Label,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onError,
                         modifier = Modifier.padding(4.dp).size(16.dp)

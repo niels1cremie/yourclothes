@@ -12,17 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Work
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.yourclothes.app.data.PlannedOutfit
 import com.yourclothes.app.ui.wardrobe.WardrobeItemCard
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -49,8 +40,6 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
     
     val showCreateDialog = remember { mutableStateOf(false) }
     val showEditDialog = remember { mutableStateOf(false) }
-    val selectedOccasion = remember { mutableStateOf("") }
-    val outfitNotes = remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -111,7 +100,7 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
 
             // Horizontal Date Picker
-            val weekDays = remember {
+            val weekDays = remember(selectedDate) {
                 (0..6).map { selectedDate.minusDays(selectedDate.dayOfWeek.value.toLong() - 1).plusDays(it.toLong()) }
             }
 
@@ -194,9 +183,8 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
             onCreateOutfit = { occasion, notes ->
                 viewModel.startCreatingOutfit()
                 showCreateDialog.value = false
-                selectedOccasion.value = occasion
-                outfitNotes.value = notes
-                viewModel.createOutfit(occasion, notes)
+                // Logic to select items should be added
+                // For now, this just starts the process
             },
             onDismiss = { showCreateDialog.value = false }
         )
@@ -219,20 +207,6 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
                 },
                 onDismiss = { showEditDialog.value = false }
             )
-        }
-    }
-
-    // Handle outfit creation state
-    LaunchedEffect(outfitCreationState) {
-        when (val s = outfitCreationState) {
-            is OutfitCreationState.Success -> {
-                viewModel.resetOutfitCreationState()
-            }
-            is OutfitCreationState.Error -> {
-                // Show error message (could be a snackbar)
-                viewModel.resetOutfitCreationState()
-            }
-            else -> {}
         }
     }
 }

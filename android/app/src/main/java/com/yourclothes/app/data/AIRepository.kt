@@ -1,6 +1,7 @@
 package com.yourclothes.app.data
 
 import io.github.jan.supabase.functions.functions
+import io.ktor.client.call.body
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -60,7 +61,8 @@ class AIRepository {
                 function = "user-analyzer",
                 body = request
             )
-            val result = Json.decodeFromString<UserAnalysisResponse>(response.bodyAsText())
+            val text = response.body<String>()
+            val result = Json.decodeFromString<UserAnalysisResponse>(text)
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)
@@ -73,7 +75,8 @@ class AIRepository {
                 function = "clothing-analyzer",
                 body = request
             )
-            val result = Json.decodeFromString<ClothingAnalysisResponse>(response.bodyAsText())
+            val text = response.body<String>()
+            val result = Json.decodeFromString<ClothingAnalysisResponse>(text)
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)
@@ -86,7 +89,8 @@ class AIRepository {
                 function = "outfit-generator",
                 body = request
             )
-            val result = Json.decodeFromString<OutfitGenerationResponse>(response.bodyAsText())
+            val text = response.body<String>()
+            val result = Json.decodeFromString<OutfitGenerationResponse>(text)
             Result.success(result)
         } catch (e: Exception) {
             Result.failure(e)

@@ -1,7 +1,9 @@
-apply plugin: 'com.android.application'
-apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'org.jetbrains.kotlin.plugin.compose'
-apply plugin: 'kotlinx-serialization'
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+}
 
 android {
     namespace = "com.yourclothes.app"
@@ -33,6 +35,13 @@ android {
         compose true
         buildConfig true
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+    kotlinOptions {
+        jvmTarget = '21'
+    }
 }
 
 repositories {
@@ -44,6 +53,7 @@ dependencies {
     // Core Android & Compose
     implementation "androidx.core:core-ktx:1.15.0"
     implementation "androidx.core:core-splashscreen:1.0.1"
+    implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:2.8.7"
@@ -65,14 +75,15 @@ dependencies {
     implementation "io.github.jan-tennert.supabase:compose-auth"
     
     // HTTP Client for Supabase
-    implementation "io.ktor:ktor-client-android:3.0.3"
-    implementation "io.ktor:ktor-client-okhttp:3.0.3"
-    implementation "io.ktor:ktor-client-content-negotiation:3.0.3"
-    implementation "io.ktor:serialization-kotlinx-json:3.0.3"
+    implementation "io.ktor:ktor-client-android:2.3.12"
+    implementation "io.ktor:ktor-client-okhttp:2.3.12"
+    implementation "io.ktor:ktor-client-content-negotiation:2.3.12"
+    implementation "io.ktor:ktor-serialization-kotlinx-json:2.3.12"
     
     // Image Loading
     implementation "io.coil-kt.coil3:coil-compose:3.0.4"
     implementation "io.coil-kt.coil3:coil-network-okhttp:3.0.4"
+    implementation "io.coil-kt.coil3:coil-gif:3.0.4"
 
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"

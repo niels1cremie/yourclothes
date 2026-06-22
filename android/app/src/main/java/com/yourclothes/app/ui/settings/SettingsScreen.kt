@@ -5,12 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.TextFormat
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,15 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.yourclothes.app.data.AppTheme
-import com.yourclothes.app.data.ColorScheme
-import com.yourclothes.app.data.Language
+import com.yourclothes.app.data.*
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel) {
     val state by viewModel.state.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
 
     Column(
         modifier = Modifier
@@ -42,7 +33,7 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        when (state) {
+        when (val s = state) {
             is SettingsState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -50,13 +41,12 @@ fun SettingsScreen(viewModel: SettingsViewModel) {
             }
             is SettingsState.Error -> {
                 Text(
-                    (state as SettingsState.Error).message,
+                    s.message,
                     color = MaterialTheme.colorScheme.error
                 )
             }
             is SettingsState.Loaded -> {
-                val settings = (state as SettingsState.Loaded).settings
-                SettingsContent(settings, viewModel)
+                SettingsContent(s.settings, viewModel)
             }
         }
     }
@@ -85,7 +75,7 @@ fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            AppTheme.values.forEach { theme ->
+            AppTheme.entries.forEach { theme ->
                 ThemeOption(
                     theme = theme,
                     selected = settings.theme == theme,
@@ -119,7 +109,7 @@ fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            ColorScheme.values.forEach { colorScheme ->
+            com.yourclothes.app.data.ColorScheme.entries.forEach { colorScheme ->
                 ColorSchemeOption(
                     colorScheme = colorScheme,
                     selected = settings.colorScheme == colorScheme,
@@ -153,7 +143,7 @@ fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Language.values.forEach { language ->
+            Language.entries.forEach { language ->
                 LanguageOption(
                     language = language,
                     selected = settings.language == language,
@@ -245,7 +235,7 @@ fun SettingsContent(settings: AppSettings, viewModel: SettingsViewModel) {
             Spacer(modifier = Modifier.height(12.dp))
             
             InfoRow("Versie", "1.0.0")
-            Divider()
+            HorizontalDivider()
             InfoRow("Build", "Native Android")
         }
     }
@@ -276,21 +266,21 @@ fun ThemeOption(theme: AppTheme, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ColorSchemeOption(colorScheme: ColorScheme, selected: Boolean, onClick: () -> Unit) {
+fun ColorSchemeOption(colorScheme: com.yourclothes.app.data.ColorScheme, selected: Boolean, onClick: () -> Unit) {
     val title = when (colorScheme) {
-        ColorScheme.DEFAULT -> "Standaard"
-        ColorScheme.BLUE -> "Blauw"
-        ColorScheme.GREEN -> "Groen"
-        ColorScheme.PURPLE -> "Paars"
-        ColorScheme.ORANGE -> "Oranje"
+        com.yourclothes.app.data.ColorScheme.DEFAULT -> "Standaard"
+        com.yourclothes.app.data.ColorScheme.BLUE -> "Blauw"
+        com.yourclothes.app.data.ColorScheme.GREEN -> "Groen"
+        com.yourclothes.app.data.ColorScheme.PURPLE -> "Paars"
+        com.yourclothes.app.data.ColorScheme.ORANGE -> "Oranje"
     }
 
     val color = when (colorScheme) {
-        ColorScheme.DEFAULT -> MaterialTheme.colorScheme.primary
-        ColorScheme.BLUE -> Color(0xFF2196F3)
-        ColorScheme.GREEN -> Color(0xFF4CAF50)
-        ColorScheme.PURPLE -> Color(0xFF9C27B0)
-        ColorScheme.ORANGE -> Color(0xFFFF9800)
+        com.yourclothes.app.data.ColorScheme.DEFAULT -> MaterialTheme.colorScheme.primary
+        com.yourclothes.app.data.ColorScheme.BLUE -> Color(0xFF2196F3)
+        com.yourclothes.app.data.ColorScheme.GREEN -> Color(0xFF4CAF50)
+        com.yourclothes.app.data.ColorScheme.PURPLE -> Color(0xFF9C27B0)
+        com.yourclothes.app.data.ColorScheme.ORANGE -> Color(0xFFFF9800)
     }
 
     Row(
@@ -309,10 +299,11 @@ fun ColorSchemeOption(colorScheme: ColorScheme, selected: Boolean, onClick: () -
             modifier = Modifier.size(24.dp),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.foundation.background(
+            Surface(
                 color = color,
-                shape = MaterialTheme.shapes.small
-            )
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxSize()
+            ) {}
         }
         Spacer(modifier = Modifier.width(12.dp))
         Text(title)

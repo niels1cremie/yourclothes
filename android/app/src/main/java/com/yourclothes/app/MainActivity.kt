@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.navigation.compose.rememberNavController
-import coil3.compose.LocalImageLoader
 import com.yourclothes.app.data.*
 import com.yourclothes.app.ui.navigation.AppNavigation
 import com.yourclothes.app.ui.theme.CoilConfig
@@ -54,10 +53,8 @@ class MainActivity : ComponentActivity() {
                     }
                     else -> isSystemDark
                 },
-                colorScheme = when (val s = settingsState) {
+                colorScheme = when (settingsState) {
                     is SettingsState.Loaded -> {
-                        // Dynamic color scheme logic from previous version
-                        // Simplified for clarity in refactor
                         if (isSystemDark) {
                             darkColorScheme(primary = AppColors.Gold)
                         } else {
@@ -67,18 +64,17 @@ class MainActivity : ComponentActivity() {
                     else -> lightColorScheme(primary = AppColors.Gold)
                 }
             ) {
-                CompositionLocalProvider(LocalImageLoader provides imageLoader) {
-                    val navController = rememberNavController()
-                    AppNavigation(
-                        navController = navController,
-                        authRepository = authRepository,
-                        wardrobeRepository = wardrobeRepository,
-                        aiRepository = aiRepository,
-                        plannerRepository = plannerRepository,
-                        profileRepository = profileRepository,
-                        settingsRepository = settingsRepository
-                    )
-                }
+                // Temporary removal of LocalImageLoader provider to verify composable context
+                val navController = rememberNavController()
+                AppNavigation(
+                    navController = navController,
+                    authRepository = authRepository,
+                    wardrobeRepository = wardrobeRepository,
+                    aiRepository = aiRepository,
+                    plannerRepository = plannerRepository,
+                    profileRepository = profileRepository,
+                    settingsRepository = settingsRepository
+                )
             }
         }
     }

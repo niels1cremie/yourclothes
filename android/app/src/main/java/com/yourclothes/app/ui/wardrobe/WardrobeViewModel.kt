@@ -76,8 +76,8 @@ class WardrobeViewModel(
 
                 // 5. Create item with AI analysis
                 val newItem = WardrobeItem(
-                    user_id = user.id,
-                    image_url = publicUrl,
+                    userId = user.id,
+                    imageUrl = publicUrl,
                     category = analysis?.category ?: "onbekend",
                     color = analysis?.color,
                     style = analysis?.style,

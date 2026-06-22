@@ -47,7 +47,7 @@ class InsightsViewModel(
                 val topCategory = items.groupBy { it.category }
                     .maxByOrNull { it.value.size }?.key ?: "Geen"
                 
-                val leastWornItem = items.minByOrNull { it.times_worn }
+                val leastWornItem = items.minByOrNull { it.timesWorn }
                 
                 val colorDistribution = items.groupBy { it.color ?: "Onbekend" }
                     .mapValues { it.value.size }

@@ -2,21 +2,27 @@ package com.yourclothes.app.data
 
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class WardrobeItem(
     val id: String? = null,
-    val user_id: String,
-    val image_url: String,
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("image_url")
+    val imageUrl: String,
     val category: String,
     val color: String? = null,
     val style: String? = null,
     val fabric: String? = null,
-    val laundry_status: String = "clean",
-    val times_worn: Int = 0
+    @SerialName("laundry_status")
+    val laundryStatus: String = "clean",
+    @SerialName("times_worn")
+    val timesWorn: Int = 0
 )
 
 class WardrobeRepository {
@@ -35,11 +41,12 @@ class WardrobeRepository {
     suspend fun uploadPhoto(fileName: String, byteArray: ByteArray, mimeType: String = "image/jpeg"): String = withContext(Dispatchers.IO) {
         val bucket = client.storage["wardrobe-photos"]
         
-        // Fix: Use data parameter correctly
         bucket.upload(
             path = fileName,
             data = byteArray
-        )
+        ) {
+            contentType = ContentType.parse(mimeType)
+        }
         
         bucket.publicUrl(fileName)
     }

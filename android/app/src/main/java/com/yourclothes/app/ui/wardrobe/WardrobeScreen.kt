@@ -37,7 +37,7 @@ fun WardrobeScreen(viewModel: WardrobeViewModel, onNavigateToScanner: () -> Unit
                     title = { Text("Mijn Kledingkast") },
                     actions = {
                         IconButton(onClick = { isGridView = !isGridView }) {
-                            Icon(if (isGridView) Icons.Default.ViewList else Icons.Default.GridView, null)
+                            Icon(if (isGridView) Icons.Default.GridView else Icons.Default.ViewList, null)
                         }
                     }
                 )
@@ -136,7 +136,7 @@ fun WardrobeItemCard(item: WardrobeItem) {
         Box {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data(item.image_url)
+                    .data(item.imageUrl)
                     .size(Size.ORIGINAL)
                     .scale(Scale.FIT)
                     .build(),
@@ -145,7 +145,7 @@ fun WardrobeItemCard(item: WardrobeItem) {
                 contentScale = ContentScale.Crop
             )
             
-            if (item.laundry_status == "dirty") {
+            if (item.laundryStatus == "dirty") {
                 Surface(
                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
@@ -181,7 +181,7 @@ fun WardrobeListItem(item: WardrobeItem) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = item.image_url,
+                model = item.imageUrl,
                 contentDescription = null,
                 modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Crop

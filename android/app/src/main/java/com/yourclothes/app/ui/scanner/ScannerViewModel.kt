@@ -58,8 +58,8 @@ class ScannerViewModel(
 
                 // 4. Save
                 val newItem = WardrobeItem(
-                    user_id = user.id,
-                    image_url = publicUrl,
+                    userId = user.id,
+                    imageUrl = publicUrl,
                     category = analysis.category,
                     color = analysis.color,
                     style = analysis.style,

@@ -7,7 +7,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -33,6 +35,14 @@ import com.yourclothes.app.ui.insights.InsightsViewModel
 import com.yourclothes.app.ui.profile.ProfileScreen
 import com.yourclothes.app.ui.profile.ProfileViewModel
 import kotlin.reflect.KClass
+
+sealed class BottomNavItem(val route: Any, val label: String, val icon: ImageVector, val screenClass: KClass<*>) {
+    data object Wardrobe : BottomNavItem(Screen.Wardrobe, "Kast", Icons.Default.PhotoLibrary, Screen.Wardrobe::class)
+    data object Planner : BottomNavItem(Screen.Planner, "Planner", Icons.Default.CalendarMonth, Screen.Planner::class)
+    data object Scanner : BottomNavItem(Screen.Scanner, "Scan", Icons.Default.AddAPhoto, Screen.Scanner::class)
+    data object Insights : BottomNavItem(Screen.Insights, "Insights", Icons.Default.Insights, Screen.Insights::class)
+    data object Profile : BottomNavItem(Screen.Profile, "Profiel", Icons.Default.Person, Screen.Profile::class)
+}
 
 @Composable
 fun AppNavigation(
@@ -64,7 +74,6 @@ fun AppNavigation(
 
         composable<Screen.Onboarding> {
             OnboardingScreen { _, _, _, _ ->
-                // Mark onboarding as completed in profile would happen here
                 navController.navigate(Screen.Main) {
                     popUpTo(Screen.Onboarding) { inclusive = true }
                 }
@@ -72,7 +81,7 @@ fun AppNavigation(
         }
 
         composable<Screen.Main> {
-            MainContainer(
+            MainScaffold(
                 authRepository,
                 wardrobeRepository,
                 aiRepository,
@@ -85,7 +94,7 @@ fun AppNavigation(
 }
 
 @Composable
-fun MainContainer(
+fun MainScaffold(
     authRepository: AuthRepository,
     wardrobeRepository: WardrobeRepository,
     aiRepository: AIRepository,
@@ -96,11 +105,11 @@ fun MainContainer(
     val innerNavController = rememberNavController()
     
     val items = listOf(
-        AppNavItem(Screen.Wardrobe, "Kast", Icons.Default.PhotoLibrary, Screen.Wardrobe::class),
-        AppNavItem(Screen.Planner, "Planner", Icons.Default.CalendarMonth, Screen.Planner::class),
-        AppNavItem(Screen.OutfitGenerator, "Stijl", Icons.Default.AutoAwesome, Screen.OutfitGenerator::class),
-        AppNavItem(Screen.Insights, "Insights", Icons.Default.Insights, Screen.Insights::class),
-        AppNavItem(Screen.Profile, "Profiel", Icons.Default.Person, Screen.Profile::class)
+        BottomNavItem.Wardrobe,
+        BottomNavItem.Planner,
+        BottomNavItem.Scanner,
+        BottomNavItem.Insights,
+        BottomNavItem.Profile
     )
 
     Scaffold(
@@ -113,9 +122,9 @@ fun MainContainer(
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.label) },
                         label = { Text(item.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route?.contains(item.screenClass.simpleName ?: "") == true } == true,
+                        selected = currentDestination?.hierarchy?.any { it.hasRoute(item.screenClass) } == true,
                         onClick = {
-                            innerNavController.navigate(item.screen) {
+                            innerNavController.navigate(item.route) {
                                 popUpTo(innerNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
@@ -181,10 +190,3 @@ fun MainContainer(
         }
     }
 }
-
-data class AppNavItem(
-    val screen: Any,
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val screenClass: KClass<*>
-)

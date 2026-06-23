@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +56,7 @@ fun OutfitGeneratorScreen(viewModel: OutfitViewModel) {
                 label = { Text("Gelegenheid") },
                 placeholder = { Text("bijv. Zakelijke meeting, Date night, Sport") },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = state !is OutfitState.Loading,
+                enabled = state !is OutfitState.Loading && state !is OutfitState.Saving,
                 shape = MaterialTheme.shapes.medium
             )
 
@@ -64,7 +65,7 @@ fun OutfitGeneratorScreen(viewModel: OutfitViewModel) {
             Button(
                 onClick = { viewModel.generate(occasion) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                enabled = occasion.isNotBlank() && state !is OutfitState.Loading,
+                enabled = occasion.isNotBlank() && state !is OutfitState.Loading && state !is OutfitState.Saving,
                 shape = MaterialTheme.shapes.medium
             ) {
                 if (state is OutfitState.Loading) {
@@ -84,6 +85,31 @@ fun OutfitGeneratorScreen(viewModel: OutfitViewModel) {
                         onSave = { viewModel.saveToPlanner(s.items, occasion) },
                         onReset = { viewModel.reset() }
                     )
+                }
+                is OutfitState.Saving -> {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Outfit opslaan...")
+                        }
+                    }
+                }
+                is OutfitState.SaveSuccess -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    ) {
+                        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(s.message, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { viewModel.reset() }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Nieuwe outfit genereren")
+                    }
                 }
                 is OutfitState.Error -> {
                     ErrorView(message = s.message, onRetry = { viewModel.generate(occasion) })

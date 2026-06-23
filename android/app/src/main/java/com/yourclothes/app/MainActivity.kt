@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,14 +17,15 @@ import com.yourclothes.app.ui.settings.SettingsViewModel
 import com.yourclothes.app.ui.settings.SettingsState
 
 class MainActivity : ComponentActivity() {
-    private val authRepository = AuthRepository()
-    private val wardrobeRepository = WardrobeRepository()
-    private val aiRepository = AIRepository()
-    private val plannerRepository = PlannerRepository()
+    private val authRepository by lazy { AuthRepository() }
+    private val wardrobeRepository by lazy { WardrobeRepository() }
+    private val aiRepository by lazy { AIRepository() }
+    private val plannerRepository by lazy { PlannerRepository() }
     private val profileRepository by lazy { ProfileRepository(this) }
     private val settingsRepository by lazy { SettingsRepository(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         

@@ -6,11 +6,15 @@ import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.size.Dimension
 import coil3.size.Scale
-import coil3.size.Size
 import okhttp3.OkHttpClient
 
 object CoilConfig {
+    
+    // Stel een max afmeting in voor afbeeldingen om OOM te voorkomen
+    private const val MAX_IMAGE_SIZE = 1200
+    
     fun createImageLoader(context: Context, okHttpClient: OkHttpClient): ImageLoader {
         return ImageLoader.Builder(context)
             .components {
@@ -18,16 +22,20 @@ object CoilConfig {
             }
             .memoryCache {
                 MemoryCache.Builder()
-                    .maxSizePercent(context, 0.25)
+                    .maxSizePercent(context, 0.15) // Verlaagd van 25% naar 15% voor meer geheugenruimte
                     .build()
             }
             .crossfade(false)
             .build()
     }
     
-    fun configureOriginalQuality(request: ImageRequest.Builder): ImageRequest.Builder {
+    /**
+     * Configureer voor efficiënte weergave - downsample afbeeldingen
+     * die te groot zijn voor het scherm.
+     */
+    fun configureEfficientDisplay(request: ImageRequest.Builder): ImageRequest.Builder {
         return request
-            .size(Size.ORIGINAL)
+            .size(width = Dimension(MAX_IMAGE_SIZE), height = Dimension(MAX_IMAGE_SIZE))
             .scale(Scale.FIT)
     }
 }

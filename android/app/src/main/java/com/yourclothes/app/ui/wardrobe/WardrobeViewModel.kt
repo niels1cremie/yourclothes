@@ -55,33 +55,33 @@ class WardrobeViewModel(
         viewModelScope.launch {
             val user = authRepository.getCurrentUser() ?: return@launch
             try {
-                // 1. Detect original file extension from URI
+                // 1. Detect file extension from URI
                 val contentResolver = context.contentResolver
                 val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
-                val fileExtension = FileUtils.getExtensionFromMimeType(mimeType)
+                val fileExtension = "jpg" // Altijd JPEG omdat we downsamplen en comprimeren
 
-                // 2. Read raw bytes without any compression or processing
-                val bytes = FileUtils.readUriToBytes(context, uri)
+                // 2. Read and downsample image to prevent OOM errors
+                val bytes = FileUtils.readAndDownsampleUri(context, uri)
 
-                // 3. Upload to Supabase Storage with original file extension
+                // 3. Upload to Supabase Storage
                 val fileName = "${user.id}/${UUID.randomUUID()}.$fileExtension"
-                val publicUrl = wardrobeRepository.uploadPhoto(fileName, bytes, mimeType)
+                val publicUrl = wardrobeRepository.uploadPhoto(fileName, bytes, "image/jpeg")
 
                 // 4. AI Analysis via Edge Function
                 val aiResult = aiRepository.analyzeClothing(
                     com.yourclothes.app.data.ClothingAnalysisRequest(imageUrl = publicUrl)
                 )
 
-                val analysis = aiResult.getOrNull()
+                val analysis = aiResult.getOrNull() ?: throw Exception("AI analyse mislukt")
 
                 // 5. Create item with AI analysis
                 val newItem = WardrobeItem(
                     userId = user.id,
                     imageUrl = publicUrl,
-                    category = analysis?.category ?: "onbekend",
-                    color = analysis?.color,
-                    style = analysis?.style,
-                    fabric = analysis?.fabric
+                    category = analysis.category,
+                    color = analysis.color,
+                    style = analysis.style,
+                    fabric = analysis.fabric
                 )
                 wardrobeRepository.addItem(newItem)
                 loadItems()

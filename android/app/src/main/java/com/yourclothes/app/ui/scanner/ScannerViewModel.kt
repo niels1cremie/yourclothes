@@ -38,15 +38,15 @@ class ScannerViewModel(
             try {
                 _state.value = ScannerState.Uploading
                 
-                // 1. Prepare file
+                // 1. Prepare file - downsample om OOM te voorkomen
                 val contentResolver = context.contentResolver
                 val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
-                val fileExtension = FileUtils.getExtensionFromMimeType(mimeType)
-                val bytes = FileUtils.readUriToBytes(context, uri)
+                val fileExtension = "jpg"
+                val bytes = FileUtils.readAndDownsampleUri(context, uri)
 
                 // 2. Upload
                 val fileName = "${user.id}/scans/${UUID.randomUUID()}.$fileExtension"
-                val publicUrl = wardrobeRepository.uploadPhoto(fileName, bytes, mimeType)
+                val publicUrl = wardrobeRepository.uploadPhoto(fileName, bytes, "image/jpeg")
 
                 // 3. Analyze
                 _state.value = ScannerState.Analyzing(publicUrl)

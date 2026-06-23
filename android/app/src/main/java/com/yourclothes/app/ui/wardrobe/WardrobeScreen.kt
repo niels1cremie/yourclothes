@@ -18,10 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.size.Scale
-import coil3.size.Size
 import com.yourclothes.app.data.WardrobeItem
 import com.yourclothes.app.ui.components.*
+import com.yourclothes.app.ui.theme.CoilConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,11 +151,9 @@ fun WardrobeItemCard(item: WardrobeItem) {
     ) {
         Box {
             AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(item.imageUrl)
-                    .size(Size.ORIGINAL)
-                    .scale(Scale.FIT)
-                    .build(),
+                model = CoilConfig.configureEfficientDisplay(
+                    ImageRequest.Builder(LocalContext.current)
+                ).data(item.imageUrl).build(),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -198,7 +195,9 @@ fun WardrobeListItem(item: WardrobeItem) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = item.imageUrl,
+                model = CoilConfig.configureEfficientDisplay(
+                    ImageRequest.Builder(LocalContext.current)
+                ).data(item.imageUrl).build(),
                 contentDescription = null,
                 modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Crop

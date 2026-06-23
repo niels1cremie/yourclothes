@@ -10,8 +10,10 @@ import kotlinx.coroutines.launch
 sealed class OutfitState {
     object Idle : OutfitState()
     object Loading : OutfitState()
+    object Saving : OutfitState()
     data class Success(val items: List<WardrobeItem>, val reasoning: String) : OutfitState()
     data class Error(val message: String) : OutfitState()
+    data class SaveSuccess(val message: String) : OutfitState()
 }
 
 class OutfitViewModel(
@@ -65,6 +67,8 @@ class OutfitViewModel(
         viewModelScope.launch {
             val user = authRepository.getCurrentUser() ?: return@launch
             try {
+                _state.value = OutfitState.Saving
+                
                 val today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_DATE)
                 val outfit = PlannedOutfit(
                     userId = user.id,
@@ -74,8 +78,10 @@ class OutfitViewModel(
                     notes = "Gegenereerd door MIRROR AI"
                 )
                 plannerRepository.createPlannedOutfit(outfit)
-            } catch (ignored: Exception) {
-                // Simplified error handling
+                
+                _state.value = OutfitState.SaveSuccess("Outfit opgeslagen in planner!")
+            } catch (e: Exception) {
+                _state.value = OutfitState.Error("Opslaan mislukt: ${e.message}")
             }
         }
     }
